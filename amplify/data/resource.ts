@@ -13,15 +13,16 @@ const schema = a.schema({
       name: a.string(),
     })
     .authorization((allow) => [allow.publicApiKey()]),
-  Videos: a
-    .model({
-      videoId: a.string().required(),
-      videoName: a.string(),
-      createdAt: a.timestamp(),
-      hasChunks: a.boolean(),
-    })
-    .authorization((allow) => [allow.publicApiKey()])
 
+  Videos: a
+  .model({
+    videoId: a.string().required(),  // Use .id() to mark as partition key
+    createdAt: a.timestamp(),
+    videoName: a.string(),
+    hasChunks: a.boolean(),
+  })
+  .identifier(['videoId'])
+    .authorization((allow) => [allow.publicApiKey()])
 });
 
 export type Schema = ClientSchema<typeof schema>;

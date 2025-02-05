@@ -48,33 +48,30 @@ export default function App() {
 
   return (
     <main>
-      <h1>My todos</h1>
-      <button onClick={createTodo}>+ new</button>
-      <ul>
-        {todos.map((todo) => (
-          <>
-          <li key={todo.id}>{todo.content}</li>
-          <li key={todo.id}>{todo.name}</li>
-          </>
-        ))}
-      </ul>
-      <h1>My videos</h1>
-      <input type="text" value={videoName} onChange={(e) => setVideoName(e.target.value)} />
-      <button onClick={createVideo}>+ new</button>
-      <ul>
-        {videos.map((video) => (
-          <>
-          <li key={video?.id}>{video?.videoName}</li>
-          </>
-        ))}
-      </ul>
-      <div>
-        🥳 App successfully hosted. Try creating a new todo.
-        <br />
-        <a href="https://docs.amplify.aws/nextjs/start/quickstart/nextjs-app-router-client-components/">
-          Review next steps of this tutorial.
-        </a>
-      </div>
-    </main>
+    <h1>My todos</h1>
+    <button onClick={createTodo}>+ new</button>
+    <ul>
+      {todos.map((todo) => (
+        <li key={todo.id}>
+          {todo.content} - {todo.name}
+        </li>
+      ))}
+    </ul>
+    <h1>My videos</h1>
+    <input type="text" value={videoName} onChange={(e) => setVideoName(e.target.value)} />
+    <button onClick={createVideo}>+ new</button>
+    <ul>
+      {videos.map((video) => (
+        <li key={video.videoId}>{video.videoName}</li>
+      ))}
+    </ul>
+    <div>
+      🥳 App successfully hosted. Try creating a new todo.
+      <br />
+      <a href="https://docs.amplify.aws/nextjs/start/quickstart/nextjs-app-router-client-components/">
+        Review next steps of this tutorial.
+      </a>
+    </div>
+  </main>
   );
 }
