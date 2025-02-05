@@ -10,8 +10,17 @@ const schema = a.schema({
   Todo: a
     .model({
       content: a.string(),
+      name: a.string(),
     })
     .authorization((allow) => [allow.publicApiKey()]),
+  MyVideos: a
+    .model({
+      videoId: a.string(),
+      videoName: a.string(),
+      createdAt: a.timestamp(),
+      hasChunks: a.boolean(),
+    })
+    .authorization((allow) => [allow.publicApiKey()])
 });
 
 export type Schema = ClientSchema<typeof schema>;

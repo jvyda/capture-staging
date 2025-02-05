@@ -14,6 +14,7 @@ const client = generateClient<Schema>();
 
 export default function App() {
   const [todos, setTodos] = useState<Array<Schema["Todo"]["type"]>>([]);
+  const [MyVideos, setMyVideos] = useState<Array<Schema["MyVideos"]["type"]>>([]);
 
   function listTodos() {
     client.models.Todo.observeQuery().subscribe({
@@ -21,13 +22,20 @@ export default function App() {
     });
   }
 
+  function listMyVideos() {
+    client.models.MyVideos.observeQuery().subscribe({
+      next: (data) => setMyVideos([...data.items]),
+    });
+  }
   useEffect(() => {
     listTodos();
+    listMyVideos();
   }, []);
 
   function createTodo() {
     client.models.Todo.create({
       content: window.prompt("Todo content"),
+      name: 'rambo',
     });
   }
 
@@ -37,7 +45,18 @@ export default function App() {
       <button onClick={createTodo}>+ new</button>
       <ul>
         {todos.map((todo) => (
+          <>
           <li key={todo.id}>{todo.content}</li>
+          <li key={todo.id}>{todo.name}</li>
+          </>
+        ))}
+      </ul>
+      <h1>My videos</h1>
+      <ul>
+        {MyVideos.map((video) => (
+          <>
+          <li key={video.id}>{video.videoName}</li>
+          </>
         ))}
       </ul>
       <div>
