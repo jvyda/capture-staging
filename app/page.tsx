@@ -15,6 +15,7 @@ const client = generateClient<Schema>();
 export default function App() {
   const [todos, setTodos] = useState<Array<Schema["Todo"]["type"]>>([]);
   const [videos, setVideos] = useState<Array<Schema["Videos"]["type"]>>([]);
+  const [videoName, setVideoName] = useState<string>("");
 
   function listTodos() {
     client.models.Todo.observeQuery().subscribe({
@@ -25,6 +26,12 @@ export default function App() {
   function listVideos() {
     client.models.Videos.observeQuery().subscribe({
       next: (data) => setVideos([...data.items]),
+    });
+  }
+  const createVideo = () => {
+    client.models.Videos.create({
+      videoName,
+      hasChunks: false,
     });
   }
   useEffect(() => {
@@ -52,10 +59,12 @@ export default function App() {
         ))}
       </ul>
       <h1>My videos</h1>
+      <input type="text" value={videoName} onChange={(e) => setVideoName(e.target.value)} />
+      <button onClick={createVideo}>+ new</button>
       <ul>
         {videos.map((video) => (
           <>
-          <li key={video.id}>{video.videoName}</li>
+          <li key={video?.id}>{video?.videoName}</li>
           </>
         ))}
       </ul>

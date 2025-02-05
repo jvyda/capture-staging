@@ -15,12 +15,13 @@ const schema = a.schema({
     .authorization((allow) => [allow.publicApiKey()]),
   Videos: a
     .model({
-      videoId: a.string(),
+      videoId: a.string().required(),
       videoName: a.string(),
       createdAt: a.timestamp(),
       hasChunks: a.boolean(),
     })
     .authorization((allow) => [allow.publicApiKey()])
+
 });
 
 export type Schema = ClientSchema<typeof schema>;
