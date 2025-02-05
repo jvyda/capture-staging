@@ -29,7 +29,10 @@ export default function App() {
     });
   }
   const createVideo = () => {
+    // Generate a UUID using crypto
+    const videoId = crypto.randomUUID();
     client.models.Videos.create({
+      videoId: videoId,
       videoName,
       hasChunks: false,
     });

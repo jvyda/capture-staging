@@ -13,16 +13,71 @@ const schema = a.schema({
       name: a.string(),
     })
     .authorization((allow) => [allow.publicApiKey()]),
-
+  Users: a
+    .model({
+      userId: a.id(),
+      name: a.string(),
+      phoneNumber: a.string(),
+      email: a.string(),
+      emailVerified: a.boolean(),
+      subscriptionPlan: a.string(),
+      subscriptionStatus: a.string(),
+      createdAt: a.timestamp(),
+      updatedAt: a.timestamp(),
+      storageAllocated: a.float(),
+      storageUsed: a.float(),
+      framesTotal: a.integer(),
+      framesProcessed: a.integer(),
+      photosTotal: a.integer(),
+      photosProcessed: a.integer(),
+      videosTotal: a.integer(),
+      videosProcessed: a.integer(),
+      role: a.string(),
+      totalEvents: a.integer(),
+      events: a.hasMany('Events', 'userId') // Links to the 'userId' field in Events
+    })
+    .authorization((allow) => [allow.publicApiKey()]),
+  Events: a
+    .model({
+      eventId: a.id(), // mark as partition key
+      eventName: a.string(),
+      description: a.string(),
+      eventDate: a.timestamp(),
+      Venue: a.string(),
+      address: a.string(),
+      city: a.string(),
+      state: a.string(),
+      zip: a.string(),
+      country: a.string(),
+      createdAt: a.timestamp(),
+      updatedAt: a.timestamp(),
+      userId: a.string(),
+      type: a.string(),
+      message: a.string(),
+      user: a.belongsTo('Users', 'userId')
+    })
+    .authorization((allow) => [allow.publicApiKey()]),
   Videos: a
-  .model({
-    videoId: a.string().required(),  // Use .id() to mark as partition key
-    createdAt: a.timestamp(),
-    videoName: a.string(),
-    hasChunks: a.boolean(),
-  })
-  .identifier(['videoId'])
-    .authorization((allow) => [allow.publicApiKey()])
+    .model({
+      videoId: a.id(), // mark as partition key
+      createdAt: a.timestamp(),
+      videoName: a.string(),
+      hasChunks: a.boolean(),
+      chunksCount: a.integer(),
+      videoChunks: a.hasMany('VideoChunks', 'videoId') // Links to the 'videoId' field in VideoChunks
+    })
+    .authorization((allow) => [allow.publicApiKey()]),
+
+  VideoChunks: a
+    .model({
+      chunkId: a.id(), //  mark as partition key
+      createdAt: a.timestamp(),
+      chunkName: a.string(),
+      hasChunks: a.boolean(),
+      videoId: a.string(),
+      videoChunk: a.belongsTo('Videos', 'videoId')
+    })
+    .authorization((allow) => [allow.publicApiKey()]),
 });
 
 export type Schema = ClientSchema<typeof schema>;
