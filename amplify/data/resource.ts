@@ -13,7 +13,7 @@ const schema = a.schema({
       name: a.string(),
     })
     .authorization((allow) => [allow.publicApiKey()]),
-  MyVideos: a
+  Videos: a
     .model({
       videoId: a.string(),
       videoName: a.string(),
