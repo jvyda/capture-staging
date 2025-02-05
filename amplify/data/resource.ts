@@ -15,7 +15,7 @@ const schema = a.schema({
     .authorization((allow) => [allow.publicApiKey()]),
   Users: a
     .model({
-      userId: a.id(),
+      userId: a.string().required(),
       name: a.string(),
       phoneNumber: a.string(),
       email: a.string(),
@@ -36,10 +36,11 @@ const schema = a.schema({
       totalEvents: a.integer(),
       events: a.hasMany('Events', 'userId') // Links to the 'userId' field in Events
     })
+    .identifier(['userId'])
     .authorization((allow) => [allow.publicApiKey()]),
   Events: a
     .model({
-      eventId: a.id(), // mark as partition key
+      eventId: a.string().required(), // mark as partition key
       eventName: a.string(),
       description: a.string(),
       eventDate: a.timestamp(),
@@ -56,6 +57,7 @@ const schema = a.schema({
       message: a.string(),
       user: a.belongsTo('Users', 'userId')
     })
+    .identifier(['eventId'])
     .authorization((allow) => [allow.publicApiKey()]),
   Videos: a
     .model({
