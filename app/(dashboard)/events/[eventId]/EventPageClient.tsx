@@ -149,8 +149,8 @@ export function EventPageClient({ eventData }: EventPageClientProps) {
                 onMouseLeave={() => setIsImageHovered(false)}
               >
                 <img
-                  src={eventData.coverImage}
-                  alt={eventData.eventName}
+                  src={eventData.coverImage || 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=800&q=80'}
+                  alt={eventData.eventName || 'Event cover image'}
                   className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                 />
                 <motion.div 
@@ -180,7 +180,7 @@ export function EventPageClient({ eventData }: EventPageClientProps) {
                 </div>
                 <div className="flex items-center gap-2 text-theme-secondary">
                   <MapPin className="w-4 h-4" />
-                  <span>{eventData.location}</span>
+                  <span>{eventData.city || 'N/A'}</span>
                 </div>
               </div>
 
