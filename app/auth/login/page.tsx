@@ -9,10 +9,14 @@ import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
 import { Camera, Loader2 } from 'lucide-react';
 import Link from 'next/link';
+import { signIn } from 'aws-amplify/auth';
 
 export default function LoginPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -21,13 +25,66 @@ export default function LoginPage() {
     setError('');
 
     try {
-      // Add AWS Cognito authentication logic here
-      await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulated delay
-      router.push('/dashboard');
-    } catch (err) {
-      setError('Invalid email or password');
+      const { isSignedIn, nextStep } = await signIn({
+        username: email,
+        password,
+      });
+
+      if (isSignedIn) {
+        // Check if there's a redirect URL stored
+        const redirectUrl = sessionStorage.getItem('redirectUrl');
+        // Clear the stored redirect URL
+        sessionStorage.removeItem('redirectUrl');
+        // Redirect to the stored URL or dashboard
+        router.push(redirectUrl || '/');
+      } else {
+        // Handle different auth challenges
+        switch (nextStep.signInStep) {
+          case 'CONFIRM_SIGN_UP':
+            router.push(`/auth/confirm?username=${encodeURIComponent(email)}`);
+            break;
+          case 'RESET_PASSWORD':
+            router.push(`/auth/reset-password?username=${encodeURIComponent(email)}`);
+            break;
+          case 'CONFIRM_SIGN_IN_WITH_NEW_PASSWORD_REQUIRED':
+            router.push(`/auth/new-password?username=${encodeURIComponent(email)}`);
+            break;
+          default:
+            setError('Unexpected authentication state. Please try again.');
+        }
+      }
+    } catch (error: any) {
+      console.error('Sign-in error:', error);
+      
+      // Handle specific error cases
+      switch (error.name) {
+        case 'UserNotConfirmedException':
+          setError('Email not verified. Please check your email for verification code.');
+          setTimeout(() => {
+            router.push(`/auth/confirm?username=${encodeURIComponent(email)}`);
+          }, 2000);
+          break;
+        case 'NotAuthorizedException':
+          setError('Incorrect email or password');
+          break;
+        case 'UserNotFoundException':
+          setError('No account found with this email');
+          break;
+        case 'LimitExceededException':
+          setError('Too many attempts. Please try again later');
+          break;
+        default:
+          setError(error.message || 'Failed to sign in. Please try again.');
+      }
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !isLoading) {
+      const form = e.currentTarget.closest('form');
+      if (form) form.requestSubmit();
     }
   };
 
@@ -59,10 +116,16 @@ export default function LoginPage() {
             <Label htmlFor="email">Email</Label>
             <Input
               id="email"
-              type="email"
               placeholder="m@example.com"
+              type="email"
+              autoCapitalize="none"
+              autoComplete="email"
+              autoCorrect="off"
               required
               disabled={isLoading}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              onKeyPress={handleKeyPress}
             />
           </div>
 
@@ -78,9 +141,16 @@ export default function LoginPage() {
             </div>
             <Input
               id="password"
+              placeholder="••••••••"
               type="password"
+              autoCapitalize="none"
+              autoComplete="current-password"
+              autoCorrect="off"
               required
               disabled={isLoading}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              onKeyPress={handleKeyPress}
             />
           </div>
 

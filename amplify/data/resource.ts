@@ -42,7 +42,7 @@ const schema = a.schema({
       address: a.string(),
       city: a.string(),
       country: a.string(),
-      eventDate: a.timestamp(),
+      eventDate: a.string(),
       eventDescription: a.string(),
       eventName: a.string(),
       eventVenue: a.string(),
@@ -60,6 +60,8 @@ const schema = a.schema({
       userId: a.string(),
       videosProcessed: a.integer(),
       videosTotal: a.integer(),
+      coverImage: a.string(),
+      eventStatus: a.string(),
       user: a.belongsTo('Users', 'userId')
     })
     .identifier(['eventId'])
@@ -198,7 +200,7 @@ const schema = a.schema({
     Persons: a
     .model({
       personId: a.string().required(),
-      age: a.string(0),
+      age: a.string(),
       allowFaceRecognition: a.boolean(),
       email: a.string(),
       emotion: a.string(),

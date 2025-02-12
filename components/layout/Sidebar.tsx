@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { signOut } from 'aws-amplify/auth';
+
 import { 
   LayoutDashboard, 
   Calendar, 
@@ -35,7 +37,7 @@ import {
 } from "@/components/ui/tooltip";
 
 const sidebarItems = [
-  { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard", description: "Overview and statistics" },
+  { icon: LayoutDashboard, label: "Dashboard", path: "/", description: "Overview and statistics" },
   { icon: Calendar, label: "Events", path: "/events", description: "Manage your events" },
   { icon: Image, label: "Photos", path: "/photos", description: "Browse your photos" },
   { icon: Layers, label: "Frames", path: "/frames", description: "Browse extracted frames" },
@@ -77,7 +79,10 @@ export function Sidebar() {
       setIsMobileOpen(!isMobileOpen);
     }
   };
-
+const handleSignOut = async () => {
+  await signOut();
+  router.push('/auth/login');
+};
   return (
     <>
       {/* Mobile Menu Button */}
@@ -217,7 +222,7 @@ export function Sidebar() {
                 </DropdownMenuItem>
               </DropdownMenuGroup>
               <DropdownMenuSeparator className="bg-theme-accent-alpha/20" />
-              <DropdownMenuItem className="text-red-400 focus:text-red-400 focus:bg-red-400/10">
+              <DropdownMenuItem className="text-red-400 focus:text-red-400 focus:bg-red-400/10" onClick={() => handleSignOut()}>
                 <LogOut className="w-4 h-4 mr-2" />
                 <span>Log out</span>
               </DropdownMenuItem>

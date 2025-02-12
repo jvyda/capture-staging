@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import {redirect} from 'next/navigation'
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -9,12 +10,16 @@ import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
 import { Loader2, Check, X } from 'lucide-react';
 import Link from 'next/link';
-
+import Signup from '@/components/auth/signup';
+import '@aws-amplify/ui-react/styles.css';
+import { signUp } from 'aws-amplify/auth';
 export default function SignUpPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [showPasswordRequirements, setShowPasswordRequirements] =
     useState(false);
@@ -43,30 +48,52 @@ export default function SignUpPage() {
       return;
     }
 
-    // Check if all password requirements are met
-    const allRequirementsMet = passwordRequirements.every((req) =>
-      req.test(password)
-    );
-    if (!allRequirementsMet) {
-      setError('Please ensure all password requirements are met');
-      return;
-    }
-
     setIsLoading(true);
     setError('');
 
     try {
-      // Add AWS Cognito sign up logic here
-      await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulated delay
-      router.push('/auth/verify-email');
-    } catch (err) {
-      setError('Failed to create account. Please try again.');
+      // Use email as username since Cognito is configured to use email as username
+      const { isSignUpComplete, userId, nextStep } = await signUp({
+        username: email, // Using email as username
+        password,
+        options: {
+          userAttributes: {
+            email // This is still required to set the email attribute
+          },
+          autoSignIn: true
+        }
+      });
+
+      if (isSignUpComplete) {
+        router.push('/auth/signin');
+      } else {
+        switch (nextStep.signUpStep) {
+          case 'CONFIRM_SIGN_UP':
+            router.push(`/auth/confirm?username=${encodeURIComponent(email)}`); // Use email for confirmation
+            break;
+          default:
+            setError('Unexpected signup state. Please try again.');
+        }
+      }
+    } catch (error: any) {
+      console.error('Signup error:', error);
+      if (error.name === 'UsernameExistsException') {
+        setError('An account with this email already exists');
+      } else if (error.name === 'InvalidPasswordException') {
+        setError('Password does not meet requirements');
+      } else if (error.name === 'InvalidParameterException') {
+        setError('Invalid email format');
+      } else {
+        setError(error.message || 'Failed to sign up. Please try again.');
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
+    <>
+    
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
@@ -81,8 +108,9 @@ export default function SignUpPage() {
           Enter your details below to create your account
         </p>
       </div>
-
+      
       <Card className="p-6 bg-background backdrop-blur-sm border-theme-accent-alpha/20">
+      {/* <Signup /> */}
         <form onSubmit={handleSubmit} className="space-y-4">
           {error && (
             <div className="p-3 rounded-lg bg-red-50 text-red-600 text-sm">
@@ -92,16 +120,6 @@ export default function SignUpPage() {
 
           <div className="grid gap-4">
             <div className="grid gap-2">
-              <Label htmlFor="name">Full Name</Label>
-              <Input
-                id="name"
-                placeholder="John Doe"
-                required
-                disabled={isLoading}
-              />
-            </div>
-
-            <div className="grid gap-2">
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
@@ -109,6 +127,7 @@ export default function SignUpPage() {
                 placeholder="m@example.com"
                 required
                 disabled={isLoading}
+                onChange={(e) => setEmail(e.target.value)}
               />
             </div>
 
@@ -247,5 +266,6 @@ export default function SignUpPage() {
         </Link>
       </p>
     </motion.div>
+    </>
   );
 }
