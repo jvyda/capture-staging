@@ -45,7 +45,18 @@ export function EventList() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
           >
-            <EventCard {...event} />
+            <EventCard 
+            eventId={event.eventId}
+              eventName={event.eventName || undefined}
+              eventDate={event.eventDate || undefined}
+              eventVenue={event.eventVenue || undefined}
+              city={event.city || undefined}
+              coverImage={event.coverImage || undefined}
+              photosTotal={event.photosTotal || 0}
+              videosTotal={event.videosTotal || 0}
+              eventStatus={(event.eventStatus === 'upcoming' || event.eventStatus === 'completed') 
+                ? event.eventStatus 
+                : 'upcoming'}  />
           </motion.div>
         ))}
       </div>

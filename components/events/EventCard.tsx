@@ -8,14 +8,14 @@ import Link from 'next/link';
 
 interface EventCardProps {
   eventId: string;
-  eventName: string;
-  eventDate: string;
-  eventVenue: string;
-  city: string;
-  coverImage: string;
-  photosTotal: number;
-  videosTotal: number;
-  eventStatus: 'upcoming' | 'completed';
+  eventName?: string;
+  eventDate?: string;
+  eventVenue?: string;
+  city?: string;
+  coverImage?: string;
+  photosTotal?: number;
+  videosTotal?: number;
+  eventStatus?: 'upcoming' | 'completed';
 }
 
 export function EventCard({
