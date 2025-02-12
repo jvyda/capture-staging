@@ -8,13 +8,15 @@ import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { generateClient } from 'aws-amplify/data';
 import type { Schema } from '@/amplify/data/resource';
+import { getCurrentUser, fetchUserAttributes } from 'aws-amplify/auth';
 const client = generateClient<Schema>();
 type Events = Schema['Events']['type'];
 export function EventList() {
   const [isAddEventOpen, setIsAddEventOpen] = useState(false);
   const [events, setEvents] = useState<Events[]>([]);
-
+  
   useEffect(() => {
+    
     const sub = client.models.Events.observeQuery().subscribe({
       next: ({ items, isSynced }) => {
         setEvents([...items]);
