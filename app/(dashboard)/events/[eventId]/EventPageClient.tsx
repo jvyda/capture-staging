@@ -7,27 +7,29 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Video, Image, Users, Clock, MapPin, Calendar, Frame, Edit2, Upload } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { type Schema } from '@/amplify/data/resource';
 
-interface EventData {
-  id: string;
-  title: string;
-  description: string;
-  date: string;
-  time: string;
-  venue: string;
-  location: string;
-  coverImage: string;
-  statistics: {
-    totalVideos: number;
-    totalPhotos: number;
-    totalFrames: number;
-    totalPeople: number;
-  };
-}
-
+type Event = Schema['Events']['type'];
 interface EventPageClientProps {
-  eventData: EventData;
+  eventData: Event;
 }
+// interface EventData {
+//   eventId: string;
+//   eventName: string;
+//   eventDescription: string;
+//   eventDate: string;
+//   eventVenue: string;
+//   location: string;
+//   coverImage: string;
+//   videosTotal: number;
+//   photosTotal: number;
+//   framesTotal: number;
+//   peopleTagged: number;
+// }
+
+// interface EventPageClientProps {
+//   eventData: EventData;
+// }
 
 export function EventPageClient({ eventData }: EventPageClientProps) {
   const router = useRouter();
@@ -38,7 +40,7 @@ export function EventPageClient({ eventData }: EventPageClientProps) {
   };
 
   const handleEdit = () => {
-    router.push(`/events/${eventData.id}/edit`);
+    router.push(`/events/${eventData.eventId}/edit`);
   };
 
   const handleImageEdit = () => {
@@ -49,28 +51,28 @@ export function EventPageClient({ eventData }: EventPageClientProps) {
   const stats = [
     {
       title: "Videos",
-      value: eventData.statistics.totalVideos,
+      value: eventData.videosTotal,
       icon: Video,
       color: "bg-blue-500/10 text-blue-500",
       link: "/videos",
     },
     {
       title: "Photos",
-      value: eventData.statistics.totalPhotos,
+      value: eventData.photosTotal,
       icon: Image,
       color: "bg-green-500/10 text-green-500",
       link: "/photos",
     },
     {
       title: "Frames",
-      value: eventData.statistics.totalFrames,
+      value: eventData.framesTotal,
       icon: Frame,
       color: "bg-purple-500/10 text-purple-500",
       link: "/photos",
     },
     {
       title: "People",
-      value: eventData.statistics.totalPeople,
+      value: eventData.peopleTagged,
       icon: Users,
       color: "bg-orange-500/10 text-orange-500",
       link: "/faces",
@@ -90,7 +92,7 @@ export function EventPageClient({ eventData }: EventPageClientProps) {
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <h1 className="text-2xl font-bold text-theme-primary">
-            {eventData.title}
+            {eventData.eventName}
           </h1>
         </div>
         <Button
@@ -114,7 +116,7 @@ export function EventPageClient({ eventData }: EventPageClientProps) {
             >
               <motion.div
                 whileHover={{ scale: 1.02 }}
-                className="p-6 rounded-lg bg-white/50 backdrop-blur-sm border border-theme-accent-alpha/20"
+                className="p-6 rounded-lg bg-background backdrop-blur-sm border border-theme-accent-alpha/20"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
@@ -125,7 +127,7 @@ export function EventPageClient({ eventData }: EventPageClientProps) {
                   </div>
                   <div>
                     <h3 className="text-lg font-semibold text-theme-primary">
-                      {stat.value.toLocaleString()}
+                      {stat.value}
                     </h3>
                     <p className="text-sm text-theme-secondary">{stat.title}</p>
                   </div>
@@ -139,7 +141,7 @@ export function EventPageClient({ eventData }: EventPageClientProps) {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
           {/* Event Details */}
-          <Card className="p-6 bg-white/50 backdrop-blur-sm border-theme-accent-alpha/20">
+          <Card className="p-6 bg-background backdrop-blur-sm border-theme-accent-alpha/20">
             <div className="space-y-4">
               <div 
                 className="aspect-[21/9] relative rounded-lg overflow-hidden group"
@@ -148,7 +150,7 @@ export function EventPageClient({ eventData }: EventPageClientProps) {
               >
                 <img
                   src={eventData.coverImage}
-                  alt={eventData.title}
+                  alt={eventData.eventName}
                   className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                 />
                 <motion.div 
@@ -170,15 +172,11 @@ export function EventPageClient({ eventData }: EventPageClientProps) {
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex items-center gap-2 text-theme-secondary">
                   <Calendar className="w-4 h-4" />
-                  <span>{eventData.date}</span>
-                </div>
-                <div className="flex items-center gap-2 text-theme-secondary">
-                  <Clock className="w-4 h-4" />
-                  <span>{eventData.time}</span>
+                  <span>{eventData.eventDate}</span>
                 </div>
                 <div className="flex items-center gap-2 text-theme-secondary">
                   <MapPin className="w-4 h-4" />
-                  <span>{eventData.venue}</span>
+                  <span>{eventData.eventVenue}</span>
                 </div>
                 <div className="flex items-center gap-2 text-theme-secondary">
                   <MapPin className="w-4 h-4" />
@@ -188,14 +186,14 @@ export function EventPageClient({ eventData }: EventPageClientProps) {
 
               <div className="space-y-2">
                 <h2 className="text-lg font-semibold text-theme-primary">Description</h2>
-                <p className="text-theme-secondary">{eventData.description}</p>
+                <p className="text-theme-secondary">{eventData.eventDescription}</p>
               </div>
             </div>
           </Card>
         </div>
 
         {/* Recent Activity */}
-        <Card className="p-6 bg-white/50 backdrop-blur-sm border-theme-accent-alpha/20">
+        <Card className="p-6 bg-background backdrop-blur-sm border-theme-accent-alpha/20">
           <h2 className="text-lg font-semibold text-theme-primary mb-4">Recent Activity</h2>
           <div className="space-y-4">
             {[1, 2, 3].map((_, index) => (

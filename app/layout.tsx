@@ -28,7 +28,7 @@ export default function RootLayout({
         <RouteGuard>
           <ClientLayout>
             {children}
-            <img src="/logo.svg" alt="CaptureJoy" className="absolute bottom-8 right-8 select-none" />
+            <img src="/logo.svg" alt="CaptureJoy" className="fixed bottom-8 right-8 select-none" />
           </ClientLayout>
         </RouteGuard>
       </body>

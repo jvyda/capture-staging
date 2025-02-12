@@ -14,16 +14,38 @@ type Events = Schema['Events']['type'];
 export function EventList() {
   const [isAddEventOpen, setIsAddEventOpen] = useState(false);
   const [events, setEvents] = useState<Events[]>([]);
-  
+  const [userId, setUserId] = useState<string | null>(null);
+
+  // Fetch current user's ID when component mounts
   useEffect(() => {
-    
-    const sub = client.models.Events.observeQuery().subscribe({
+    const fetchUserId = async () => {
+      try {
+        const user = await getCurrentUser();
+        setUserId(user.userId);
+      } catch (error) {
+        console.error('Error fetching user:', error);
+      }
+    };
+    fetchUserId();
+  }, []);
+  useEffect(() => {
+    if (!userId) return;
+    const sub = client.models.Events.observeQuery({
+      filter: {
+        userId: {
+          eq: userId
+        }
+      }
+    }).subscribe({
       next: ({ items, isSynced }) => {
         setEvents([...items]);
       },
+      error: (error) => {
+        console.error('Error fetching events:', error);
+      }
     });
     return () => sub.unsubscribe();
-  }, []);
+  }, [userId]);
   
 
   return (
