@@ -36,7 +36,7 @@ export function EventCard({
           <div className="relative h-48">
             <Image
               src="https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=800&q=80"
-              alt={eventName}
+              alt={eventName || 'Event image'}
               fill
               priority
               className="object-cover group-hover:scale-105 transition-transform duration-300"
