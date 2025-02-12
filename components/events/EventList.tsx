@@ -9,12 +9,14 @@ import { Button } from "@/components/ui/button";
 import { generateClient } from 'aws-amplify/data';
 import type { Schema } from '@/amplify/data/resource';
 import { getCurrentUser, fetchUserAttributes } from 'aws-amplify/auth';
+import { LoadingSpinner } from "@/components/layout/LoadingSpinner";
 const client = generateClient<Schema>();
 type Events = Schema['Events']['type'];
 export function EventList() {
   const [isAddEventOpen, setIsAddEventOpen] = useState(false);
   const [events, setEvents] = useState<Events[]>([]);
   const [userId, setUserId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Fetch current user's ID when component mounts
   useEffect(() => {
@@ -47,7 +49,9 @@ export function EventList() {
     return () => sub.unsubscribe();
   }, [userId]);
   
-
+  if (!events.length) {
+    return <LoadingSpinner />;
+  }
   return (
     <div className="max-w-7xl mx-auto">
       <div className="flex items-center justify-between mb-8">

@@ -6,6 +6,7 @@ import { generateClient } from 'aws-amplify/data';
 import { type Schema } from '@/amplify/data/resource';
 import { useParams } from 'next/navigation';
 import { getCurrentUser, fetchUserAttributes } from 'aws-amplify/auth';
+import {LoadingSpinner} from "@/components/layout/LoadingSpinner";
 type Event = Schema['Events']['type'];
 interface EventPageClientProps {
   eventData: Event;
@@ -48,7 +49,6 @@ export default function EventPage() {
         const { data: eventData, errors } = await client.models.Events.get({
           eventId: eventId
         });
-console.log(eventData)
         if (eventData && eventData.userId === userId) {
           setEvent(eventData);
         } else {
@@ -64,7 +64,7 @@ console.log(eventData)
   }, [eventId, userId]);
 
   if (!event) {
-    return <div>Loading...</div>;
+    return <LoadingSpinner />;
   }
 
   return <EventPageClient eventData={event} />;

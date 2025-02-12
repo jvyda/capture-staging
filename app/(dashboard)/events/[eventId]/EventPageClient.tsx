@@ -54,28 +54,28 @@ export function EventPageClient({ eventData }: EventPageClientProps) {
       value: eventData.videosTotal,
       icon: Video,
       color: "bg-blue-500/10 text-blue-500",
-      link: "/videos",
+      link: `/events/${eventData.eventId}/videos`,
     },
     {
       title: "Photos",
       value: eventData.photosTotal,
       icon: Image,
       color: "bg-green-500/10 text-green-500",
-      link: "/photos",
+      link: `/events/${eventData.eventId}/photos`,
     },
     {
       title: "Frames",
       value: eventData.framesTotal,
       icon: Frame,
       color: "bg-purple-500/10 text-purple-500",
-      link: "/photos",
+      link: `/events/${eventData.eventId}/frames`,
     },
     {
       title: "People",
       value: eventData.peopleTagged,
       icon: Users,
       color: "bg-orange-500/10 text-orange-500",
-      link: "/faces",
+      link: `/events/${eventData.eventId}/faces`,
     },
   ];
 

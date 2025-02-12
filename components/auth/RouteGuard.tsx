@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { getCurrentUser } from 'aws-amplify/auth';
 import { Loader2 } from 'lucide-react';
+import { LoadingSpinner } from "@/components/layout/LoadingSpinner";
 
 interface RouteGuardProps {
   children: React.ReactNode;
@@ -55,9 +56,7 @@ export function RouteGuard({ children }: RouteGuardProps) {
   // Show loading spinner while checking authentication
   if (isLoading) {
     return (
-      <div className="flex h-screen w-screen items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-theme-primary" />
-      </div>
+      <LoadingSpinner />
     );
   }
 
