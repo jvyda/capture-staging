@@ -6,6 +6,14 @@ import { VideoCard } from "./VideoCard";
 import { Pagination } from "@/components/shared/Pagination";
 import { VideoUploadButton } from "./VideoUploadButton";
 import { FilterBar } from "./FilterBar";
+import { generateClient } from 'aws-amplify/data';
+import { useParams } from 'next/navigation';
+import { getCurrentUser, fetchUserAttributes } from 'aws-amplify/auth';
+import type { Schema } from '@/amplify/data/resource';
+import { LoadingSpinner } from "@/components/layout/LoadingSpinner";
+const client = generateClient<Schema>();
+type VideoCardProps = Schema['Videos']['type'];
+
 
 interface VideoGridProps {
   filter: string;
@@ -16,65 +24,55 @@ interface VideoGridProps {
 export function VideoGrid({ filter, search, onFilterChange }: VideoGridProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const [isUploadOpen, setIsUploadOpen] = useState(false);
-  const videosPerPage = 8;
+  const videosPerPage = 30;
+  const params = useParams();
+  const eventId = params?.eventId as string;
+  const [videos, setVideos] = useState<VideoCardProps[]>([]);
+  const [userId, setUserId] = useState<string | null>(null);
 
-  const videos = [
-    {
-      id: "1",
-      title: "Mountain Sunrise Timelapse",
-      thumbnail: "https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=800&q=80",
-      duration: "2:45",
-      uploadDate: "2 hours ago",
-      views: 1234,
-      favorite: true,
-      starred: false,
-      status: "ready" as const,
-      faceExtractionStatus: {
-        status: "complete" as const,
-        faceCount: 3,
-      },
-    },
-    {
-      id: "2",
-      title: "Ocean Waves at Sunset",
-      thumbnail: "https://images.unsplash.com/photo-1501854140801-50d01698950b?w=800&q=80",
-      duration: "4:20",
-      uploadDate: "5 hours ago",
-      views: 2567,
-      favorite: false,
-      starred: true,
-      status: "processing" as const,
-      faceExtractionStatus: {
-        status: "processing" as const,
-      },
-    },
-    // ... rest of your videos array
-  ];
-
-  const filteredVideos = videos.filter(video => {
-    if (search && !video.title.toLowerCase().includes(search.toLowerCase())) {
-      return false;
-    }
-    
-    switch (filter) {
-      case "favorites":
-        return video.favorite;
-      case "starred":
-        return video.starred;
-      case "recent":
-        return true;
-      default:
-        return true;
-    }
-  });
+  // Fetch current user's ID when component mounts
+  useEffect(() => {
+    const fetchUserId = async () => {
+      try {
+        const user = await getCurrentUser();
+        setUserId(user.userId);
+      } catch (error) {
+        console.error('Error fetching user:', error);
+      }
+    };
+    fetchUserId();
+  }, []);
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [filter, search]);
+  }, [search]);
 
-  const totalPages = Math.ceil(filteredVideos.length / videosPerPage);
+  useEffect(() => {
+    if (!userId) return;
+    const sub = client.models.Events.observeQuery({
+      filter: {
+        userId: {
+          eq: userId
+        }
+      }
+    }).subscribe({
+      next: ({ items, isSynced }) => {
+        setVideos([...items]);
+      },
+      error: (error) => {
+        console.error('Error fetching events:', error);
+      }
+    });
+    return () => sub.unsubscribe();
+  }, [userId]);
+  
+  if (!videos.length) {
+    return <LoadingSpinner />;
+  }
+
+  const totalPages = Math.ceil(videos.length / videosPerPage);
   const startIndex = (currentPage - 1) * videosPerPage;
-  const paginatedVideos = filteredVideos.slice(startIndex, startIndex + videosPerPage);
+  const paginatedVideos = videos.slice(startIndex, startIndex + videosPerPage);
 
   return (
     <>
@@ -100,7 +98,7 @@ export function VideoGrid({ filter, search, onFilterChange }: VideoGridProps) {
         >
           {paginatedVideos.map((video, index) => (
             <motion.div
-              key={video.id}
+              key={video.videoId}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1, duration: 0.5 }}

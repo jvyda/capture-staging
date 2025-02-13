@@ -5,40 +5,67 @@ import { Heart, Star, Clock, MapPin, Users, Layers, AlertCircle, Loader2, Play, 
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
+import type { Schema } from '@/amplify/data/resource';
+type VideoCardProps = Schema['Videos']['type'];
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
 
-interface VideoCardProps {
-  id: string;
-  title: string;
-  thumbnail: string;
-  duration: string;
-  uploadDate: string;
-  favorite: boolean;
-  starred: boolean;
-  status: "processing" | "ready" | "failed";
-  faceExtractionStatus: {
-    status: "processing" | "complete" | "failed" | "none";
-    faceCount?: number;
-  };
-}
+// interface VideoCardProps {
+//   id: string;
+//   title: string;
+//   thumbnail: string;
+//   duration: string;
+//   uploadDate: string;
+//   favorite: boolean;
+//   starred: boolean;
+//   status: "processing" | "ready" | "failed";
+//   faceExtractionStatus: {
+//     status: "processing" | "complete" | "failed" | "none";
+//     faceCount?: number;
+//   };
+// }
 
 export function VideoCard({
-  id,
-  title,
+  videoId,
+  eventId,
+  fileName,
   thumbnail,
   duration,
   uploadDate,
   favorite,
   starred,
-  status,
-  faceExtractionStatus,
+  taggedPeople,
+  recognitionStatus,
 }: VideoCardProps) {
   const router = useRouter();
-  const durationInSeconds = duration.split(":").reduce((acc, time) => (60 * acc) + parseInt(time), 0);
+
+
+
+  const formatSeconds =(seconds: number)=> {
+    // Ensure the input is a valid number
+    if (typeof seconds !== 'number' || isNaN(seconds)) {
+      return '00:00';
+    }
+  
+    // Convert seconds to minutes and seconds
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = Math.floor(seconds % 60);
+  
+    // Pad minutes and seconds with leading zeros if necessary
+    const formattedMinutes = String(minutes).padStart(2, '0');
+    const formattedSeconds = String(remainingSeconds).padStart(2, '0');
+  
+    // Return the formatted time as MM:SS
+    return `${formattedMinutes}:${formattedSeconds}`;
+  }
+
+
+
+
+  const durationInSeconds = formatSeconds(duration?duration:0);
   const chunks = Math.ceil(durationInSeconds / 180);
   const isOriginal = durationInSeconds <= 180;
 
@@ -92,13 +119,13 @@ export function VideoCard({
   };
 
   const getFaceExtractionText = () => {
-    switch (faceExtractionStatus.status) {
+    switch (recognitionStatus) {
       case "processing":
         return "Extracting faces...";
       case "complete":
-        return faceExtractionStatus.faceCount === 0 
+        return taggedPeople === 0 
           ? "No faces detected" 
-          : `${faceExtractionStatus.faceCount}`;
+          : `${taggedPeople}`;
       case "failed":
         return "Failed to extract faces";
       default:
@@ -108,7 +135,7 @@ export function VideoCard({
 
   const handleEditClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    router.push(`/videos/${id}`);
+    router.push(`/events/${eventId}/videos/${videoId}`);
   };
 
   return (
@@ -116,8 +143,8 @@ export function VideoCard({
       <Card className="overflow-hidden group cursor-pointer hover:shadow-lg transition-shadow bg-white/50 backdrop-blur-sm border-theme-accent-alpha/20">
         <div className="relative aspect-square">
           <Image
-            src={thumbnail}
-            alt={title}
+            src={thumbnail||'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=800&q=80'}
+            alt={fileName || 'Video thumbnail'}
             fill
             className="object-cover group-hover:scale-105 transition-transform duration-300"
           />
@@ -196,31 +223,10 @@ export function VideoCard({
             </Popover>
           </div>
 
-          {/* Favorite/Star Icons */}
-          <div className="absolute top-4 right-16 flex space-x-2">
-            {favorite && (
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                className="w-8 h-8 rounded-full bg-theme-highlight-alpha/30 backdrop-blur-sm flex items-center justify-center"
-              >
-                <Heart className="w-4 h-4 text-white fill-white" />
-              </motion.div>
-            )}
-            {starred && (
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                className="w-8 h-8 rounded-full bg-theme-accent-alpha/30 backdrop-blur-sm flex items-center justify-center"
-              >
-                <Star className="w-4 h-4 text-white fill-white" />
-              </motion.div>
-            )}
-          </div>
 
           {/* Bottom Content */}
           <div className="absolute bottom-4 left-4 right-4">
-            <h3 className="text-xs font-semibold text-white mb-1">{title}</h3>
+            <h3 className="text-xs font-semibold text-white mb-1">{fileName}</h3>
             
             <motion.div 
               initial={{ opacity: 0, x: -20 }}
@@ -233,17 +239,17 @@ export function VideoCard({
               <div>
             <div className={`
               px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1.5 backdrop-blur-sm
-              ${faceExtractionStatus.status === "processing" ? "bg-theme-primary/70 text-white" :
-                faceExtractionStatus.status === "complete" ? 
-                  faceExtractionStatus.faceCount === 0 ? "bg-yellow-500/70 text-white" : "bg-emerald-500/70 text-white" :
-                faceExtractionStatus.status === "failed" ? "bg-red-500/70 text-white" :
+              ${recognitionStatus === "processing" ? "bg-theme-primary/70 text-white" :
+                recognitionStatus === "complete" ? 
+                  taggedPeople === 0 ? "bg-yellow-500/70 text-white" : "bg-emerald-500/70 text-white" :
+                recognitionStatus === "failed" ? "bg-red-500/70 text-white" :
                 "bg-black/70 text-white"}
             `}>
-              {faceExtractionStatus.status === "processing" ? (
+              {recognitionStatus === "processing" ? (
                 <Loader2 className="w-3 h-3 animate-spin" />
-              ) : faceExtractionStatus.status === "complete" ? (
+              ) : recognitionStatus === "complete" ? (
                 <Users className="w-3 h-3" />
-              ) : faceExtractionStatus.status === "failed" ? (
+              ) : recognitionStatus === "failed" ? (
                 <AlertCircle className="w-3 h-3" />
               ) : (
                 <Users className="w-3 h-3" />
