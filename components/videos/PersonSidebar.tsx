@@ -7,7 +7,7 @@ import Image from "next/image";
 import { Clock } from "lucide-react";
 
 interface Person {
-  id: string;
+  personId: string;
   name: string;
   thumbnail: string;
   appearances: {
@@ -36,9 +36,18 @@ export function PersonSidebar({ people, selectedPerson, onPersonClick, currentTi
       (appearance) => currentTime >= appearance.startTime && currentTime < appearance.endTime
     );
   };
-
+if (!people.length) return (
+  <Card className="h-full bg-background backdrop-blur-sm border-theme-accent-alpha/20">
+      <div className="p-4">
+        <h2 className="text-lg font-semibold text-theme-primary mb-4">
+          Detected People
+        </h2>
+        No people detected
+      </div>
+    </Card>
+);
   return (
-    <Card className="h-full bg-white/50 backdrop-blur-sm border-theme-accent-alpha/20">
+    <Card className="h-full bg-background backdrop-blur-sm border-theme-accent-alpha/20">
       <div className="p-4">
         <h2 className="text-lg font-semibold text-theme-primary mb-4">
           Detected People
@@ -47,15 +56,15 @@ export function PersonSidebar({ people, selectedPerson, onPersonClick, currentTi
           <div className="space-y-3 pr-4">
             {people.map((person) => {
               const isActive = isPersonActive(person);
-              const isSelected = selectedPerson?.id === person.id;
+              const isSelected = selectedPerson?.personId === person.personId;
 
               return (
                 <motion.button
-                  key={person.id}
+                  key={person.personId}
                   className={`
                     w-full p-3 rounded-lg transition-colors
                     ${isSelected 
-                      ? "bg-theme-primary text-white" 
+                      ? "bg-black/50 text-white" 
                       : "hover:bg-theme-highlight-alpha/20"
                     }
                   `}

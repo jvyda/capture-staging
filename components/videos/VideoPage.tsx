@@ -8,7 +8,7 @@ import { PersonSidebar } from "./PersonSidebar";
 import { PersonTimeline } from "./PersonTimeline";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Edit2, Upload } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { FramesUploadButton } from "./FramesUploadButton";
 
 // Mock data - replace with actual API calls
@@ -48,14 +48,14 @@ const mockVideoData = {
   ],
 };
 
-export function VideoPage({ params }: { params: { id: string } }) {
+export function VideoPage() {
   const router = useRouter();
   const videoRef = useRef<HTMLVideoElement>(null);
   const [currentTime, setCurrentTime] = useState(0);
   const [selectedPerson, setSelectedPerson] = useState<typeof mockVideoData.people[0] | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isUploadOpen, setIsUploadOpen] = useState(false);
-
+const params = useParams();
   const handleTimeUpdate = (time: number) => {
     setCurrentTime(time);
   };
@@ -74,15 +74,13 @@ export function VideoPage({ params }: { params: { id: string } }) {
   };
 
   const handleBack = () => {
-    router.push("/videos");
+    router.push(`/events/${params.eventId}/videos`);
   };
 
-  const handleEdit = () => {
-    router.push(`/videos/${params.id}/edit`);
-  };
+  
 
   return (
-    <div className="max-w-7xl mx-auto">
+    <div className="max-w mx-auto">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-4">
           <Button
@@ -100,18 +98,12 @@ export function VideoPage({ params }: { params: { id: string } }) {
         <div className="flex items-center gap-2">
           <Button
             onClick={() => setIsUploadOpen(!isUploadOpen)}
-            className="bg-theme-primary hover:bg-theme-primary-alpha/90"
+            className="bg-background hover:bg-black/50"
           >
             <Upload className="w-4 h-4 mr-2" />
             Upload Frames
           </Button>
-          <Button
-            onClick={handleEdit}
-            className="bg-theme-primary hover:bg-theme-primary-alpha/90"
-          >
-            <Edit2 className="w-4 h-4 mr-2" />
-            Edit Video
-          </Button>
+        
         </div>
       </div>
 
@@ -119,8 +111,8 @@ export function VideoPage({ params }: { params: { id: string } }) {
         <FramesUploadButton isOpen={isUploadOpen} onOpenChange={setIsUploadOpen} />
       </div>
 
-      <div className="grid grid-cols-4 gap-6">
-        <div className="col-span-3 space-y-4">
+      <div className="grid grid-cols-6 gap-6">
+        <div className="col-span-4 space-y-4">
           <div className="aspect-video bg-black rounded-lg overflow-hidden">
             <VideoPlayer
               ref={videoRef}
@@ -149,7 +141,7 @@ export function VideoPage({ params }: { params: { id: string } }) {
           </div>
         </div>
 
-        <div className="h-[calc(100vh-12rem)]">
+        <div className="col-span-2 h-[calc(100vh-12rem)]">
           <PersonSidebar
             people={mockVideoData.people}
             selectedPerson={selectedPerson}

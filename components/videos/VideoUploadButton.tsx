@@ -185,7 +185,7 @@ export function VideoUploadButton({ isOpen, onOpenChange }: VideoUploadButtonPro
         >
           <div
             className={`
-              relative border-2 border-dashed rounded-lg p-4 transition-colors duration-200
+              bg-background relative border-2 border-dashed rounded-lg p-4 transition-colors duration-200
               ${isDragging ? 'border-theme-primary bg-theme-highlight-alpha/10' : 'border-theme-accent-alpha/20'}
               ${error ? 'border-red-500 bg-red-50' : ''}
             `}
@@ -217,7 +217,7 @@ export function VideoUploadButton({ isOpen, onOpenChange }: VideoUploadButtonPro
                 <VideoIcon className="w-6 h-6 text-theme-primary" />
               </div>
               <Button
-                className="mb-2 bg-theme-primary text-white hover:bg-theme-primary-alpha/90"
+                className="mb-2 bg-primary text-black hover:bg-theme-primary-alpha/90"
                 onClick={() => fileInputRef.current?.click()}
               >
                 Choose Videos
@@ -244,7 +244,7 @@ export function VideoUploadButton({ isOpen, onOpenChange }: VideoUploadButtonPro
                 <Button
                   size="sm"
                   onClick={startUpload}
-                  className="bg-theme-primary hover:bg-theme-primary-alpha/90 text-white"
+                  className="bg-background hover:bg-theme-primary-alpha/90 text-white"
                 >
                   Start Upload
                 </Button>
@@ -297,7 +297,7 @@ export function VideoUploadButton({ isOpen, onOpenChange }: VideoUploadButtonPro
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -10 }}
-                      className="bg-white/50 backdrop-blur-sm rounded-lg p-2 flex items-center gap-3"
+                      className="bg-background backdrop-blur-sm rounded-lg p-2 flex items-center gap-3"
                     >
                       <div className="w-8 h-8 rounded-lg bg-theme-highlight-alpha/20 flex items-center justify-center flex-shrink-0">
                         <VideoIcon className="w-4 h-4 text-theme-primary" />

@@ -23,7 +23,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-theme-highlight-alpha/30 to-theme-accent-alpha/30">
       <div className="sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 lg:px-6">
+        <div className="max-w mx-auto lg:px-15 lg:py-2 px-4 py-2">
           <div className="flex items-center justify-end h-16 gap-3">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -44,7 +44,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
       </div>
       <div className="flex">
         <Sidebar />
-        <main className="flex-1 min-h-[calc(100vh-4rem)] lg:ml-16 p-4 lg:p-6">
+        <main className="flex-1 min-h-[calc(100vh-4rem)] lg:ml-16 p-4 lg:px-15">
           {children}
         </main>
       </div>

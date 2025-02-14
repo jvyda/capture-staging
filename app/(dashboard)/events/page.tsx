@@ -12,7 +12,7 @@ export default function Events() {
 
   return (
     <motion.div
-      className="max-w-7xl mx-auto"
+      className="max-w mx-auto"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}

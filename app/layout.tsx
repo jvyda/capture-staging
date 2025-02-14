@@ -5,6 +5,7 @@ import { RouteGuard } from '@/components/auth/RouteGuard';
 import { ClientLayout } from '@/components/layout/ClientLayout';
 import ConfigureAmplify  from '@/utils/configureAmplify';
 
+
 const manrope = Manrope({ 
   subsets: ['latin'],
   weight: ['200', '300', '400', '500', '600', '700', '800'],

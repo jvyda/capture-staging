@@ -7,12 +7,7 @@ specifies that any user authenticated via an API key can "create", "read",
 "update", and "delete" any "Todo" records.
 =========================================================================*/
 const schema = a.schema({
-  Todo: a
-    .model({
-      content: a.string(),
-      name: a.string(),
-    })
-    .authorization((allow) => [allow.publicApiKey()]),
+
   Users: a
     .model({
       userId: a.string().required(),
@@ -88,7 +83,8 @@ const schema = a.schema({
       userId: a.string(),
       videoName: a.string(),
       videoStatus: a.string(),
-      videoChunks: a.hasMany('VideoChunks', 'videoId') // Links to the 'videoId' field in VideoChunks
+      videoChunks: a.hasMany('VideoChunks', 'videoId'),
+      people: a.hasMany('Persons', 'videoId') // Links to the 'videoId' field in VideoChunks
     })
     .identifier(['videoId'])
     .authorization((allow) => [allow.publicApiKey()]),
@@ -96,10 +92,25 @@ const schema = a.schema({
   VideoChunks: a
     .model({
       chunkId: a.id(), //  mark as partition key
-      chunksCount:a.integer(),
+      userId: a.string(),
+      eventId: a.string(),
+      fileName:a.string(),
+      filePath:a.string(),
+      fileSize:a.float(),
       chunkName: a.string(),
-      hasChunks: a.boolean(),
+      chunkNumber:a.integer(),
+      duration: a.float(),
       videoId: a.string(),
+      isArchived:a.boolean(),
+      s3Bucket:a.string(),
+      s3Key:a.string(),
+      taggedPeopleCount:a.integer(),
+      taggedPeople:a.json(),
+      taggedFacesCount:a.integer(),
+      taggedFaces:a.json(),
+      thumbnail:a.string(),
+      recognitionStatus:a.string(),
+      recognitionCollectionId:a.string(),
       videoChunk: a.belongsTo('Videos', 'videoId')
     })
     .authorization((allow) => [allow.publicApiKey()]),
@@ -146,7 +157,7 @@ const schema = a.schema({
       imageWidth:a.integer(),
       isArchived:a.boolean(),
       recognitionCollectionId:a.string(),
-      recognitionStatus:a.boolean(),
+      recognitionStatus:a.string(),
       s3Bucket:a.string(),
       s3Key:a.string(),
       taggedFaces:a.json(),
@@ -218,7 +229,8 @@ const schema = a.schema({
       thumbnail: a.string(),
       updatedAt: a.timestamp(),
       userId: a.string(),
-      videoId: a.string()
+      videoId: a.string(),
+      video: a.belongsTo('Videos', 'videoId')
     })
     .identifier(['personId'])
     .authorization((allow) => [allow.publicApiKey()]),
