@@ -17,7 +17,7 @@ export default function Photos() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
     >
-      <PhotoGrid filter={selectedFilter} search={searchQuery} onFilterChange={setSelectedFilter}/>
+      <PhotoGrid />
     </motion.div>
   );
 }

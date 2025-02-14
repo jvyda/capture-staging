@@ -8,7 +8,7 @@ export default function FramesPage() {
 
   return (
     <div className="max-w-7xl mx-auto">
-      <PhotoGrid search={searchQuery} title="Frames" />
+      <PhotoGrid />
     </div>
   );
 }

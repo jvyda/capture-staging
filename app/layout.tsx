@@ -4,7 +4,7 @@ import { Manrope } from 'next/font/google';
 import { RouteGuard } from '@/components/auth/RouteGuard';
 import { ClientLayout } from '@/components/layout/ClientLayout';
 import ConfigureAmplify  from '@/utils/configureAmplify';
-
+import { Toaster } from 'sonner';
 
 const manrope = Manrope({ 
   subsets: ['latin'],
@@ -32,6 +32,16 @@ export default function RootLayout({
             <img src="/logo.svg" alt="CaptureJoy" className="fixed bottom-8 right-8 select-none" />
           </ClientLayout>
         </RouteGuard>
+        <Toaster 
+          richColors 
+          closeButton 
+          position="top-right"
+          duration={4000}
+          pauseWhenPageIsHidden
+          theme="light"
+          expand
+          visibleToasts={6}
+        />
       </body>
     </html>
   );

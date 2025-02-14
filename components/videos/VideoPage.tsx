@@ -25,7 +25,7 @@ const mockVideoData = {
   ],
   people: [
     {
-      id: "1",
+      personId: "1",
       name: "Sarah Johnson",
       thumbnail: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=400&q=80",
       appearances: [
@@ -36,7 +36,7 @@ const mockVideoData = {
       totalScreenTime: 210,
     },
     {
-      id: "2",
+      personId: "2",
       name: "Michael Chen",
       thumbnail: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&q=80",
       appearances: [
@@ -70,7 +70,7 @@ const params = useParams();
   };
 
   const handlePersonClick = (person: typeof mockVideoData.people[0]) => {
-    setSelectedPerson(selectedPerson?.id === person.id ? null : person);
+    setSelectedPerson(selectedPerson?.personId === person.personId ? null : person);
   };
 
   const handleBack = () => {

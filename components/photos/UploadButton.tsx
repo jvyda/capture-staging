@@ -2,16 +2,23 @@
 
 import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import SimpleBar from 'simplebar-react';
-import { Upload, X, Image as ImageIcon, AlertCircle, Loader2 } from "lucide-react";
+import SimpleBar from "simplebar-react";
+import {
+  Upload,
+  X,
+  Image as ImageIcon,
+  AlertCircle,
+  Loader2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
-import { generateClient } from 'aws-amplify/data';
-import { type Schema } from '@/amplify/data/resource';
-type Photos = Schema['Photos']['type'];
-import { getCurrentUser, fetchUserAttributes } from 'aws-amplify/auth';
+import { generateClient } from "aws-amplify/data";
+import { type Schema } from "@/amplify/data/resource";
+type Photos = Schema["Photos"]["type"];
+import { getCurrentUser, fetchUserAttributes } from "aws-amplify/auth";
+import { toast} from "sonner";
 
 // Initialize the Amplify Data client with our schema
 const client = generateClient<Schema>();
@@ -36,6 +43,8 @@ interface UploadingFile {
   name: string;
   progress: number;
   status: "uploading" | "processing" | "complete" | "error";
+  
+  Id?: string;
 }
 
 interface UploadButtonProps {
@@ -48,7 +57,12 @@ interface UploadButtonProps {
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const SUPPORTED_FORMATS = ["image/jpeg", "image/png", "image/webp"];
 
-export function UploadButton({ isOpen, onOpenChange, eventId, userId }: UploadButtonProps) {
+export function UploadButton({
+  isOpen,
+  onOpenChange,
+  eventId,
+  userId,
+}: UploadButtonProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [selectedImages, setSelectedImages] = useState<SelectedImage[]>([]);
   const [uploadingFiles, setUploadingFiles] = useState<UploadingFile[]>([]);
@@ -84,7 +98,7 @@ export function UploadButton({ isOpen, onOpenChange, eventId, userId }: UploadBu
       });
     }
 
-    setSelectedImages(prev => [...prev, ...newImages]);
+    setSelectedImages((prev) => [...prev, ...newImages]);
   };
 
   const handleDrop = (e: React.DragEvent) => {
@@ -100,46 +114,48 @@ export function UploadButton({ isOpen, onOpenChange, eventId, userId }: UploadBu
    * @returns Promise<{ blob: Blob, width: number, height: number }>
    */
   const compressImage = async (file: File, quality: number = 0.85) => {
-    return new Promise<{ blob: Blob; width: number; height: number }>(async (resolve, reject) => {
-      const img = new Image();
-      img.onload = () => {
-        URL.revokeObjectURL(img.src); // Clean up
-        const canvas = document.createElement('canvas');
-        canvas.width = img.width;
-        canvas.height = img.height;
-        
-        const ctx = canvas.getContext('2d');
-        if (!ctx) {
-          reject(new Error('Could not get canvas context'));
-          return;
-        }
-        
-        // Draw image on canvas
-        ctx.drawImage(img, 0, 0);
-        
-        // Convert to blob with compression
-        canvas.toBlob(
-          (blob) => {
-            if (!blob) {
-              reject(new Error('Could not compress image'));
-              return;
-            }
-            resolve({ blob, width: img.width, height: img.height });
-          },
-          'image/jpeg',
-          quality
-        );
-      };
-      img.onerror = () => reject(new Error('Failed to load image'));
-      
-      // Create object URL from file
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        img.src = e.target?.result as string;
-      };
-      reader.onerror = () => reject(new Error('Failed to read file'));
-      reader.readAsDataURL(file);
-    });
+    return new Promise<{ blob: Blob; width: number; height: number }>(
+      async (resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+          URL.revokeObjectURL(img.src); // Clean up
+          const canvas = document.createElement("canvas");
+          canvas.width = img.width;
+          canvas.height = img.height;
+
+          const ctx = canvas.getContext("2d");
+          if (!ctx) {
+            reject(new Error("Could not get canvas context"));
+            return;
+          }
+
+          // Draw image on canvas
+          ctx.drawImage(img, 0, 0);
+
+          // Convert to blob with compression
+          canvas.toBlob(
+            (blob) => {
+              if (!blob) {
+                reject(new Error("Could not compress image"));
+                return;
+              }
+              resolve({ blob, width: img.width, height: img.height });
+            },
+            "image/jpeg",
+            quality
+          );
+        };
+        img.onerror = () => reject(new Error("Failed to load image"));
+
+        // Create object URL from file
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          img.src = e.target?.result as string;
+        };
+        reader.onerror = () => reject(new Error("Failed to read file"));
+        reader.readAsDataURL(file);
+      }
+    );
   };
 
   /**
@@ -153,7 +169,7 @@ export function UploadButton({ isOpen, onOpenChange, eventId, userId }: UploadBu
       const img = new Image();
       img.onload = () => {
         URL.revokeObjectURL(img.src); // Clean up
-        
+
         // Calculate dimensions maintaining aspect ratio
         let width = img.width;
         let height = img.height;
@@ -168,75 +184,166 @@ export function UploadButton({ isOpen, onOpenChange, eventId, userId }: UploadBu
             height = maxDimension;
           }
         }
-        
-        const canvas = document.createElement('canvas');
+
+        const canvas = document.createElement("canvas");
         canvas.width = width;
         canvas.height = height;
-        
-        const ctx = canvas.getContext('2d');
+
+        const ctx = canvas.getContext("2d");
         if (!ctx) {
-          reject(new Error('Could not get canvas context'));
+          reject(new Error("Could not get canvas context"));
           return;
         }
-        
+
         // Enable smooth rendering
         ctx.imageSmoothingEnabled = true;
-        ctx.imageSmoothingQuality = 'high';
-        
+        ctx.imageSmoothingQuality = "high";
+
         // Draw image on canvas with new dimensions
         ctx.drawImage(img, 0, 0, width, height);
-        
+
         // Convert to blob
         canvas.toBlob(
           (blob) => {
             if (!blob) {
-              reject(new Error('Could not create thumbnail'));
+              reject(new Error("Could not create thumbnail"));
               return;
             }
             resolve(blob);
           },
-          'image/jpeg',
+          "image/jpeg",
           0.85
         );
       };
-      img.onerror = () => reject(new Error('Failed to load image'));
-      
+      img.onerror = () => reject(new Error("Failed to load image"));
+
       // Create object URL from file
       const reader = new FileReader();
       reader.onload = (e) => {
         img.src = e.target?.result as string;
       };
-      reader.onerror = () => reject(new Error('Failed to read file'));
+      reader.onerror = () => reject(new Error("Failed to read file"));
       reader.readAsDataURL(file);
     });
   };
 
-  // Update the startUpload function to handle actual S3 upload
+  /**
+   * Starts the upload process for selected images
+   * Handles progress notifications and error states
+   */
   const startUpload = async () => {
-    const newFiles = selectedImages.map(img => ({
+    const newFiles = selectedImages.map((img) => ({
       id: img.id,
       name: img.file.name,
       progress: 0,
       status: "uploading" as const,
     }));
 
-    setUploadingFiles(prev => [...prev, ...newFiles]);
-    setSelectedImages([]);
-
-    // Upload each file to S3
-    for (const image of selectedImages) {
+    setUploadingFiles((prev) => [...prev, ...newFiles]);
+    
+    // Process each file with individual promise-based toast
+    const uploadPromises = selectedImages.map(async (image) => {
+      const toastId = `upload-${image.id}`;
+      
       try {
-        await uploadToS3(image);
+        // Show initial processing state
+        toast.loading(`Processing ${image.file.name}`, {
+          id: toastId,
+        });
+
+        // Compress and create thumbnail
+        const [compressedImage, thumbnail] = await Promise.all([
+          compressImage(image.file, 0.85),
+          createThumbnail(image.file, 300),
+        ]);
+
+        // Update toast for upload phase
+        toast.loading(`Uploading ${image.file.name}`, {
+          id: toastId,
+        });
+
+        const fileExtension = image.file.name.split(".").pop();
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExtension}`;
+        const photoId = `photo_${Date.now()}_${Math.random().toString(36).substring(2)}`;
+        const s3Key = `uploads/${eventId}/${fileName}`;
+        const thumbnailKey = `uploads/${eventId}/thumbnails/${fileName}`;
+
+        // Upload to S3
+        await Promise.all([
+          s3Client.send(new PutObjectCommand({
+            Bucket: process.env.NEXT_PUBLIC_S3_PHOTOS_BUCKET_NAME,
+            Key: s3Key,
+            Body: Buffer.from(await compressedImage.blob.arrayBuffer()),
+            ContentType: "image/jpeg",
+          })),
+          s3Client.send(new PutObjectCommand({
+            Bucket: process.env.NEXT_PUBLIC_S3_PHOTOS_BUCKET_NAME,
+            Key: thumbnailKey,
+            Body: Buffer.from(await thumbnail.arrayBuffer()),
+            ContentType: "image/jpeg",
+          }))
+        ]);
+
+        // Update toast for database entry
+        toast.loading(`Finalizing ${image.file.name}`, {
+          id: toastId,
+        });
+
+        // Create database entry
+        const dbEntry = {
+          photoId,
+          eventId,
+          userId,
+          fileName,
+          filePath: s3Key,
+          s3Bucket: process.env.NEXT_PUBLIC_S3_PHOTOS_BUCKET_NAME!,
+          s3Key,
+          fileSize: compressedImage.blob.size,
+          aspectRatio: compressedImage.width / compressedImage.height,
+          imageHeight: compressedImage.height,
+          imageWidth: compressedImage.width,
+          thumbnail: thumbnailKey,
+          facesExtracted: false,
+          excludeFromFaceDetection: false,
+          recognitionStatus: "uploaded",
+          recognitionCollectionId: null,
+          isArchived: false,
+          taggedFaces: JSON.stringify([]),
+          taggedFacesCount: 0,
+          taggedPeople: JSON.stringify([]),
+          taggedPeopleCount: 0,
+          videoId: null,
+        };
+
+        await client.models.Photos.create(dbEntry);
+
+        // Show success and dismiss after 2 seconds
+        toast.success(`Successfully uploaded ${image.file.name}`, {
+          id: toastId,
+          duration: 2000,
+        });
+
+        // Remove from uploading files
+        setTimeout(() => {
+          setUploadingFiles((prev) => prev.filter((f) => f.id !== image.id));
+        }, 2000);
+
       } catch (error) {
-        console.error("Error uploading file:", error);
-        setUploadingFiles(prev =>
-          prev.map(f =>
-            f.id === image.id
-              ? { ...f, status: "error" as const }
-              : f
-          )
-        );
+        console.error(`Failed to upload ${image.file.name}:`, error);
+        toast.error(`Failed to upload ${image.file.name}`, {
+          id: toastId,
+          duration: 4000,
+        });
+        throw error;
       }
+    });
+
+    // Process all uploads concurrently
+    try {
+      await Promise.all(uploadPromises);
+      setSelectedImages([]);
+    } catch (error) {
+      console.error("One or more uploads failed:", error);
     }
   };
 
@@ -246,152 +353,86 @@ export function UploadButton({ isOpen, onOpenChange, eventId, userId }: UploadBu
    * 1. Extracts image metadata (dimensions, aspect ratio)
    * 2. Uploads the file to S3 with proper path structure
    * 3. Creates a database entry with all required fields
-   * 
+   *
    * @param image - SelectedImage object containing file and preview data
    */
   const uploadToS3 = async (image: SelectedImage) => {
     const file = image.file;
-    const fileExtension = file.name.split('.').pop();
+    const fileExtension = file.name.split(".").pop();
     const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExtension}`;
     const photoId = `photo_${Date.now()}_${Math.random().toString(36).substring(2)}`;
-    
-    console.log('Starting upload process with:', {
-      photoId,
-      fileName,
-      eventId,
-      userId,
-      fileSize: file.size,
-      fileType: file.type
-    });
-    
+
     try {
       // Compress image and create thumbnail
-      console.log('Compressing image and creating thumbnail...');
       const [compressedImage, thumbnail] = await Promise.all([
         compressImage(file, 0.85),
-        createThumbnail(file, 300)
+        createThumbnail(file, 300),
       ]);
-      
-      console.log('Image processed:', {
-        originalSize: file.size,
-        compressedSize: compressedImage.blob.size,
-        thumbnailSize: thumbnail.size,
-        width: compressedImage.width,
-        height: compressedImage.height
-      });
 
       const s3Key = `uploads/${eventId}/${fileName}`;
       const thumbnailKey = `uploads/${eventId}/thumbnails/${fileName}`;
 
-      // Upload both compressed image and thumbnail
-      const [imageCommand, thumbnailCommand] = [
-        new PutObjectCommand({
+      // Upload both files to S3
+      await Promise.all([
+        s3Client.send(new PutObjectCommand({
           Bucket: process.env.NEXT_PUBLIC_S3_PHOTOS_BUCKET_NAME,
           Key: s3Key,
-          Body: await compressedImage.blob.arrayBuffer(), // Convert Blob to ArrayBuffer
-          ContentType: 'image/jpeg',
-        }),
-        new PutObjectCommand({
+          Body: Buffer.from(await compressedImage.blob.arrayBuffer()),
+          ContentType: "image/jpeg",
+        })),
+        s3Client.send(new PutObjectCommand({
           Bucket: process.env.NEXT_PUBLIC_S3_PHOTOS_BUCKET_NAME,
           Key: thumbnailKey,
-          Body: await thumbnail.arrayBuffer(), // Convert Blob to ArrayBuffer
-          ContentType: 'image/jpeg',
-        })
-      ];
-
-      // Upload both files to S3
-      try {
-        console.log('Starting S3 uploads...');
-        await Promise.all([
-          s3Client.send(imageCommand),
-          s3Client.send(thumbnailCommand)
-        ]);
-        console.log('S3 uploads successful!');
-      } catch (s3Error) {
-        console.error("S3 Upload failed:", s3Error);
-        setUploadingFiles(prev =>
-          prev.map(f =>
-            f.id === image.id
-              ? { ...f, status: "error" as const }
-              : f
-          )
-        );
-        throw s3Error;
-      }
+          Body: Buffer.from(await thumbnail.arrayBuffer()),
+          ContentType: "image/jpeg",
+        }))
+      ]);
 
       // Create database entry
-      try {
-        const dbEntry = {
-          photoId: photoId,
-          eventId: eventId,
-          userId: userId,
-          fileName: fileName,
-          filePath: s3Key,
-          s3Bucket: process.env.NEXT_PUBLIC_S3_PHOTOS_BUCKET_NAME!,
-          s3Key: s3Key,
-          fileSize: compressedImage.blob.size,
-          aspectRatio: compressedImage.width / compressedImage.height,
-          imageHeight: compressedImage.height,
-          imageWidth: compressedImage.width,
-          thumbnail: thumbnailKey,
-          facesExtracted: false,
-          excludeFromFaceDetection: false,
-          recognitionStatus: 'uploaded',
-          recognitionCollectionId: null,
-          isArchived: false,
-          taggedFaces: JSON.stringify([]),
-          taggedFacesCount: 0,
-          taggedPeople: JSON.stringify([]),
-          taggedPeopleCount: 0,
-          videoId: null
-        };
+      const dbEntry = {
+        photoId,
+        eventId,
+        userId,
+        fileName,
+        filePath: s3Key,
+        s3Bucket: process.env.NEXT_PUBLIC_S3_PHOTOS_BUCKET_NAME!,
+        s3Key,
+        fileSize: compressedImage.blob.size,
+        aspectRatio: compressedImage.width / compressedImage.height,
+        imageHeight: compressedImage.height,
+        imageWidth: compressedImage.width,
+        thumbnail: thumbnailKey,
+        facesExtracted: false,
+        excludeFromFaceDetection: false,
+        recognitionStatus: "uploaded",
+        recognitionCollectionId: null,
+        isArchived: false,
+        taggedFaces: JSON.stringify([]),
+        taggedFacesCount: 0,
+        taggedPeople: JSON.stringify([]),
+        taggedPeopleCount: 0,
+        videoId: null,
+      };
 
-        console.log('Creating database entry...', dbEntry);
-        const result = await client.models.Photos.create(dbEntry);
-        console.log('Database entry created successfully:', result);
+      await client.models.Photos.create(dbEntry);
 
-        setUploadingFiles(prev =>
-          prev.map(f =>
-            f.id === image.id
-              ? { ...f, progress: 100, status: "complete" as const }
-              : f
-          )
-        );
-
-      } catch (dbError) {
-        console.error("Database entry creation failed. Error details:", dbError);
-        console.error("Error name:", dbError.name);
-        console.error("Error message:", dbError.message);
-        if (dbError.stack) {
-          console.error("Error stack:", dbError.stack);
-        }
-        
-        setUploadingFiles(prev =>
-          prev.map(f =>
-            f.id === image.id
-              ? { ...f, status: "error" as const }
-              : f
-          )
-        );
-      }
+      // Remove from uploading files
+      setTimeout(() => {
+        setUploadingFiles((prev) => prev.filter((f) => f.id !== image.id));
+      }, 2000);
 
     } catch (error) {
-      console.error("Upload process failed. Full error details:", error);
-      if (error instanceof Error) {
-        console.error("Error name:", error.name);
-        console.error("Error message:", error.message);
-        console.error("Error stack:", error.stack);
-      }
+      console.error("Upload process failed:", error);
       throw error;
     }
   };
 
   const removeSelectedImage = (id: string) => {
-    setSelectedImages(prev => prev.filter(img => img.id !== id));
+    setSelectedImages((prev) => prev.filter((img) => img.id !== id));
   };
 
   const removeUploadingFile = (id: string) => {
-    setUploadingFiles(prev => prev.filter(f => f.id !== id));
+    setUploadingFiles((prev) => prev.filter((f) => f.id !== id));
   };
 
   const getStatusColor = (status: UploadingFile["status"]) => {
@@ -424,8 +465,12 @@ export function UploadButton({ isOpen, onOpenChange, eventId, userId }: UploadBu
           <div
             className={`
               bg-background relative border-2 border-dashed rounded-lg p-4 transition-colors duration-200
-              ${isDragging ? 'border-theme-primary bg-theme-highlight-alpha/10' : 'border-theme-accent-alpha/20'}
-              ${error ? 'border-red-500 bg-red-50' : ''}
+              ${
+                isDragging
+                  ? "border-theme-primary bg-theme-highlight-alpha/10"
+                  : "border-theme-accent-alpha/20"
+              }
+              ${error ? "border-red-500 bg-red-50" : ""}
             `}
             onDragEnter={(e) => {
               e.preventDefault();
@@ -487,13 +532,13 @@ export function UploadButton({ isOpen, onOpenChange, eventId, userId }: UploadBu
                   Start Upload
                 </Button>
               </div>
-              <SimpleBar className="h-48">
+              <SimpleBar className="h-48" style={{ maxHeight: 200, overflowY: "scroll" }}>
                 <div className="grid grid-cols-12 gap-2 p-1">
                   {selectedImages.map((img) => (
-                    <div key={img.id} className="relative group">
+                    <div key={img.id} className="relative group col-span-3">
                       <img
                         src={img.preview}
-                        alt="Preview"
+                        alt={img.file.name}
                         className="w-full aspect-square object-cover rounded-lg"
                       />
                       <button
@@ -521,6 +566,7 @@ export function UploadButton({ isOpen, onOpenChange, eventId, userId }: UploadBu
                   Upload Progress
                 </h3>
                 <div className="space-y-2">
+                <SimpleBar className="h-48" style={{ maxHeight: 200, overflowY: "scroll" }}>
                   <AnimatePresence>
                     {uploadingFiles.map((file) => (
                       <motion.div
@@ -531,10 +577,18 @@ export function UploadButton({ isOpen, onOpenChange, eventId, userId }: UploadBu
                         transition={{ duration: 0.2 }}
                         className={`
                           bg-background backdrop-blur-sm rounded-lg p-2 flex items-center gap-3
-                          ${file.status === "complete" ? "border border-emerald-500" : ""}
+                          ${
+                            file.status === "complete"
+                              ? "border border-emerald-500"
+                              : ""
+                          }
                         `}
                       >
-                        <div className={`w-8 h-8 rounded-lg ${getStatusColor(file.status)} flex items-center justify-center flex-shrink-0`}>
+                        <div
+                          className={`w-8 h-8 rounded-lg ${getStatusColor(
+                            file.status
+                          )} flex items-center justify-center flex-shrink-0`}
+                        >
                           {file.status === "complete" ? (
                             <ImageIcon className="w-4 h-4" />
                           ) : file.status === "error" ? (
@@ -562,8 +616,11 @@ export function UploadButton({ isOpen, onOpenChange, eventId, userId }: UploadBu
                           {file.status === "uploading" && (
                             <Progress value={file.progress} className="h-1" />
                           )}
-                          <p className={`text-xs ${getStatusColor(file.status)}`}>
-                            {file.status === "uploading" && `Uploading... ${Math.round(file.progress)}%`}
+                          <p
+                            className={`text-xs ${getStatusColor(file.status)}`}
+                          >
+                            {file.status === "uploading" &&
+                              `Uploading... ${Math.round(file.progress)}%`}
                             {file.status === "processing" && "Processing..."}
                             {file.status === "complete" && "Upload complete"}
                             {file.status === "error" && "Upload failed"}
@@ -572,6 +629,7 @@ export function UploadButton({ isOpen, onOpenChange, eventId, userId }: UploadBu
                       </motion.div>
                     ))}
                   </AnimatePresence>
+                  </SimpleBar>
                 </div>
               </motion.div>
             )}
