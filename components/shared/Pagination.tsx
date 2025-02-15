@@ -83,7 +83,7 @@ export function Pagination({ currentPage, totalPages, onPageChange }: Pagination
             {isCurrentPage && (
               <motion.div
                 layoutId="pageBackground"
-                className="absolute inset-0 bg-theme-primary rounded-full"
+                className="absolute inset-0 bg-background rounded-full"
                 initial={false}
                 transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
               />

@@ -10,7 +10,7 @@ interface PhotoCardProps {
   s3Key: string;
   fileName: string;
   peopleTagged: number;
-  status: "uploaded" | "processing" | "processed" | "failed";
+  recognitionStatus: "uploaded" | "processing" | "processed" | "failed";
   photoId: string;
   thumbnail:string;
   eventId: string;
@@ -22,7 +22,7 @@ export function PhotoCard({
   s3Key,
   fileName,
   peopleTagged,
-  status,
+  recognitionStatus,
   photoId,
   thumbnail,
   isSelected,
@@ -34,11 +34,11 @@ export function PhotoCard({
   const handleViewPhoto = (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
-    router.push(`events/${eventId}/photos/${photoId}`);
+    router.push(`/events/${eventId}/photos/${photoId}`);
   };
 
   const getStatusIcon = () => {
-    switch (status) {
+    switch (recognitionStatus) {
       case "processing":
         return <Loader2 className="w-4 h-4 text-white animate-spin" />;
       case "processed":
@@ -51,11 +51,11 @@ export function PhotoCard({
   };
 
   const getStatusText = () => {
-    switch (status) {
+    switch (recognitionStatus) {
       case "processing":
         return "Processing";
       case "processed":
-        return "Ready";
+        return "Processed";
       case "failed":
         return "Failed";
       default:
@@ -75,7 +75,7 @@ export function PhotoCard({
       >
         <div className="relative aspect-square">
           <Image
-            src={`https://${process.env.NEXT_PUBLIC_PHOTOS_CDN_DOMAIN}/${thumbnail}`||''}
+            src={`${thumbnail}`||''}
             alt={fileName || ''}
             fill
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"

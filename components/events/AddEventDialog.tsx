@@ -80,6 +80,31 @@ export function AddEventDialog({ open, onOpenChange }: AddEventDialogProps) {
       // Create unique event ID
       const eventId = crypto.randomUUID();
 
+      // Create Rekognition collection
+      try {
+        const response = await fetch("/api/rekognition/createCollection", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            collectionId: eventId,
+          }),
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || 'Failed to create Rekognition collection');
+        }
+        const rekognitionData = await response.json();
+        console.log('Rekognition collection created:', rekognitionData);
+      } catch (error) {
+        console.error('Error creating Rekognition collection:', error);
+        toast.error('Failed to create Rekognition collection');
+        setIsSubmitting(false);
+        return;
+      }
+
       // Create event record
       const { errors, data: newEvent } = await client.models.Events.create({
         eventId,
@@ -99,7 +124,7 @@ export function AddEventDialog({ open, onOpenChange }: AddEventDialogProps) {
         photosProcessed: 0,
         photosTotal: 0,
         postalCode,
-        rekognitionCollectionId: null,
+        rekognitionCollectionId: eventId,
         state,
         storageUsed: 0,
         userId, // Use the userId from getCurrentUser

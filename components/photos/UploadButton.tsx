@@ -359,8 +359,10 @@ export function UploadButton({
   const uploadToS3 = async (image: SelectedImage) => {
     const file = image.file;
     const fileExtension = file.name.split(".").pop();
-    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExtension}`;
-    const photoId = `photo_${Date.now()}_${Math.random().toString(36).substring(2)}`;
+    // const photoId = `photo_${Date.now()}_${Math.random().toString(36).substring(2)}`;
+    const photoId = crypto.randomUUID();
+    const fileName = `${photoId}.${fileExtension}`;
+
 
     try {
       // Compress image and create thumbnail
@@ -369,8 +371,8 @@ export function UploadButton({
         createThumbnail(file, 300),
       ]);
 
-      const s3Key = `uploads/${eventId}/${fileName}`;
-      const thumbnailKey = `uploads/${eventId}/thumbnails/${fileName}`;
+      const s3Key = `user_${userId}/event_${eventId}/${fileName}`;
+      const thumbnailKey = `user_${userId}/event_${eventId}/thumbnails/${fileName}`;
 
       // Upload both files to S3
       await Promise.all([

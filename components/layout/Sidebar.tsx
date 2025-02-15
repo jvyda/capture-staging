@@ -36,20 +36,50 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-const sidebarItems = [
+// Main navigation items always visible
+const mainSidebarItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/", description: "Overview and statistics" },
   { icon: Calendar, label: "Events", path: "/events", description: "Manage your events" },
+];
+
+// Event-specific items only visible in event context
+const eventSidebarItems = [
   { icon: Image, label: "Photos", path: "/photos", description: "Browse your photos" },
   { icon: Layers, label: "Frames", path: "/frames", description: "Browse extracted frames" },
   { icon: Video, label: "Videos", path: "/videos", description: "Manage your videos" },
   { icon: Users, label: "People", path: "/people", description: "Tagged people" },
 ];
 
+// const sidebarItems = [
+//   { icon: LayoutDashboard, label: "Dashboard", path: "/", description: "Overview and statistics" },
+//   { icon: Calendar, label: "Events", path: "/events", description: "Manage your events" },
+//   { icon: Image, label: "Photos", path: "/photos", description: "Browse your photos" },
+//   { icon: Layers, label: "Frames", path: "/frames", description: "Browse extracted frames" },
+//   { icon: Video, label: "Videos", path: "/videos", description: "Manage your videos" },
+//   { icon: Users, label: "People", path: "/people", description: "Tagged people" },
+// ];
+
 export function Sidebar() {
   const router = useRouter();
   const pathname = usePathname();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [activeItem, setActiveItem] = useState<string | null>(pathname);
+
+  // Check if we're in an event context
+  const isEventContext = pathname?.includes('/events/') && pathname?.split('/events/')[1]?.length > 0;
+  
+  // Get the event ID from the path if we're in an event context
+  const eventId = isEventContext ? pathname?.split('/events/')[1]?.split('/')[0] : null;
+// Combine the navigation items based on context
+const sidebarItems = [
+  ...mainSidebarItems,
+  ...(isEventContext
+    ? eventSidebarItems.map(item => ({
+        ...item,
+        path: `/events/${eventId}${item.path}`,
+      }))
+    : [])
+];
 
   useEffect(() => {
     const handleResize = () => {

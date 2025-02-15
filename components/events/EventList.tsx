@@ -49,9 +49,9 @@ export function EventList() {
     return () => sub.unsubscribe();
   }, [userId]);
   
-  if (!events.length) {
-    return <LoadingSpinner />;
-  }
+  // if (!events.length) {
+  //   return <div>No Events found</div>;
+  // }
   return (
     <div className="max-w mx-auto">
       <div className="flex items-center justify-between mb-8">

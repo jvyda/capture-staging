@@ -8,7 +8,7 @@ import { ArrowLeft, Video, Image, Users, Clock, MapPin, Calendar, Frame, Edit2, 
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { type Schema } from '@/amplify/data/resource';
-
+import { toast } from "sonner";
 type Event = Schema['Events']['type'];
 interface EventPageClientProps {
   eventData: Event;
@@ -78,7 +78,72 @@ export function EventPageClient({ eventData }: EventPageClientProps) {
       link: `/events/${eventData.eventId}/faces`,
     },
   ];
+  const getCollectionFaceIdCount = async () => {
+    try {
+      if (!eventData?.rekognitionCollectionId) {
+        toast.error('No Rekognition collection found for this event');
+        return;
+      }
+  
+      const response = await fetch("/api/rekognition/getCollectionStats", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          collectionId: eventData.rekognitionCollectionId,
+        }),
+      });
+  
+      const data = await response.json();
+  
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to get collection stats');
+      }
+  
+      toast.success(`Total faces in collection: ${data.faceCount}`, {
+        duration: 5000,
+      });
+      
+      console.log('Collection stats:', data);
+    } catch (error: any) {
+      console.error("Error getting collection stats:", error);
+      toast.error(error.message || "Failed to get collection stats");
+    }
+  }
+  const resetCollection = async () => {
+    try {
+      if (!eventData?.rekognitionCollectionId) {
+        toast.error('No Rekognition collection found for this event');
+        return;
+      }
 
+      const response = await fetch("/api/rekognition/resetCollection", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          collectionId: eventData.rekognitionCollectionId,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to reset collection');
+      }
+
+      toast.success('Collection reset successfully', {
+        duration: 5000,
+      });
+      
+      console.log('Reset collection response:', data);
+    } catch (error: any) {
+      console.error("Error resetting collection:", error);
+      toast.error(error.message || "Failed to reset collection");
+    }
+  };
   return (
     <div className="max-w mx-auto space-y-6">
       <div className="flex items-center justify-between">
@@ -136,6 +201,19 @@ export function EventPageClient({ eventData }: EventPageClientProps) {
             </Link>
           );
         })}
+        <Button
+            variant="ghost"
+            size="icon"
+            onClick={getCollectionFaceIdCount}
+            className="hover:bg-theme-highlight-alpha/20"
+          >Collection Faces Count</Button>
+          <Button
+          variant="ghost"
+          onClick={resetCollection}
+          className="hover:bg-theme-highlight-alpha/20"
+        >
+          Reset Collection
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
