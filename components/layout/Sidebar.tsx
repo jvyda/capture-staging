@@ -47,7 +47,8 @@ const eventSidebarItems = [
   { icon: Image, label: "Photos", path: "/photos", description: "Browse your photos" },
   { icon: Layers, label: "Frames", path: "/frames", description: "Browse extracted frames" },
   { icon: Video, label: "Videos", path: "/videos", description: "Manage your videos" },
-  { icon: Users, label: "People", path: "/people", description: "Tagged people" },
+  { icon: Users, label: "People", path: "/persons", description: "Tagged people" },
+  { icon: Users, label: "Faces", path: "/faces", description: "Tagged faces" },
 ];
 
 // const sidebarItems = [

@@ -5,7 +5,8 @@ import { Upload, Trash2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
-
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 // Types for upload tracking
 interface UploadingFile {
   id: string;
@@ -19,13 +20,19 @@ interface FilterBarProps {
   selectedCount: number;
   onDeleteSelected: () => void;
   onFileSelect: (files: FileList) => void;
+  autoDetectEnabled: boolean;
+  onAutoDetectChange: (enabled: boolean) => void;
+  onProcessPhotos: () => void;
 }
 
 export function FilterBar({ 
   title,
   selectedCount,
   onDeleteSelected,
-  onFileSelect
+  onFileSelect,
+  autoDetectEnabled,
+  onAutoDetectChange,
+  onProcessPhotos
 }: FilterBarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadingFiles, setUploadingFiles] = useState<UploadingFile[]>([]);
@@ -59,13 +66,25 @@ export function FilterBar({
               Delete Selected ({selectedCount})
             </Button>
           )}
+          <div className="flex items-center gap-4 mr-4">
+                <Switch
+                  id="auto-detect"
+                  checked={autoDetectEnabled}
+                  onCheckedChange={onAutoDetectChange}
+                />
+                <Label htmlFor="auto-detect" className="text-sm font-medium text-theme-primary">
+                  Auto Detect
+                </Label>
+              </div>
           <Button
             onClick={handleFileSelect}
             className="bg-background hover:bg-black/50"
           >
             <Upload className="w-4 h-4 mr-2" />
-            Upload Images
+            Upload Photos
           </Button>
+          <Button onClick={onProcessPhotos}
+          className="bg-background hover:bg-black/50">Process Photos</Button>
           <input
             ref={fileInputRef}
             type="file"

@@ -2,10 +2,11 @@
 
 import { useState, useEffect, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { PhotoCard } from "@/components/photos/PhotoCard";
+import { FrameCard } from "@/components/frames/FrameCard";
 import { Pagination } from "@/components/shared/Pagination";
 import { UploadButton } from "@/components/photos/UploadButton";
-import { FilterBar } from "@/components/photos/FilterBar";
+import { FilterBar } from "@/components/frames/FilterBar";
+import { LoadingSpinner } from "@/components/layout/LoadingSpinner";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,18 +22,20 @@ import { useParams } from "next/navigation";
 import { getCurrentUser, fetchUserAttributes } from 'aws-amplify/auth';
 import { generateClient } from 'aws-amplify/data';
 import type { Schema } from '@/amplify/data/resource';
+import { Button } from "@/components/ui/button";
 const client = generateClient<Schema>();
 
 type Frames = Schema['Frames']['type'];
 export default function Frames() {
   const params = useParams();
+  const isFirstMountUserId = useRef(true);
   const isFirstMount = useRef(true);
 
   const eventId = params?.eventId as string;
   const [userId, setUserId] = useState<string | null>(null);
   // Fetch current user's ID when component mounts
   useEffect(() => {
-    if (isFirstMount.current) {
+    if (isFirstMountUserId.current) {
     const fetchUserId = async () => {
       try {
         const user = await getCurrentUser();
@@ -43,7 +46,7 @@ export default function Frames() {
       }
     };
     fetchUserId();
-    isFirstMount.current = false;
+    isFirstMountUserId.current = false;
   }
   }, [userId]);
 
@@ -55,12 +58,14 @@ export default function Frames() {
   const [isLoading, setIsLoading] = useState(true);
   const [frames, setFrames] = useState<Frames[]>([]);
   const lastUpdateRef = useRef<string>('');
-
+  const pageTokensCache = useRef<Map<number, string>>(new Map());
+  const [isProcessing, setIsProcessing] = useState(false);
   /**
    * Effect hook to manage Frame data fetching and real-time updates
    * Implements AWS best practices for subscription handling and error management
    */
   useEffect(() => {
+    if (isFirstMount.current) {
     if (userId && eventId) {
       setIsLoading(true);
       let isSubscribed = true;
@@ -74,19 +79,19 @@ export default function Frames() {
         if (syncInProgress) return;
         
         try {
+          const cachedToken = pageTokensCache.current.get(currentPage);
           syncInProgress = true;
           const { data } = await client.models.Frames.list({
             filter: {
               and: [
                 { userId: { eq: userId } },
                 { eventId: { eq: eventId } },
-                { or: [
-                  { isArchived: { eq: false } },
-                  { isArchived: { attributeExists: false } }
-                ]}
+                { isArchived: { eq: false } },
+                
               ]
             },
-            limit: 100
+            limit: framesPerPage,
+            nextToken: cachedToken || null,
           });
           
           if (isSubscribed) {
@@ -109,7 +114,8 @@ export default function Frames() {
         filter: {
           and: [
             { userId: { eq: userId } },
-            { eventId: { eq: eventId } }
+            { eventId: { eq: eventId } },
+            { isArchived: { eq: false } }
           ]
         }
       }).subscribe({
@@ -144,7 +150,11 @@ export default function Frames() {
               fetchFrames();
               break;
             case 'onDelete':
+              // Refresh to get the new item
+              fetchFrames();
             case 'onUpdate':
+              // Refresh to get the new item
+              fetchFrames();
               // For updates and deletes, let the next callback handle it
               // as it will have the latest state
               break;
@@ -157,7 +167,7 @@ export default function Frames() {
 
       // Initial fetch
       fetchFrames();
-
+      isFirstMount.current = false;
       // Cleanup subscription and prevent memory leaks
       return () => {
         console.log('Cleaning up subscription and resources...');
@@ -167,6 +177,7 @@ export default function Frames() {
         }
       };
     }
+  }
   }, [userId, eventId]);
 
   /**
@@ -264,6 +275,38 @@ export default function Frames() {
     setShowDeleteDialog(true);
   };
 
+  const handleProcessFrames = async () => {
+    if (!userId || !eventId) return;
+    
+    setIsProcessing(true);
+    try {
+      const response = await fetch('/api/sqs/addToFrameDetectionQueueBulk', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId,
+          eventId,
+          rekognitionCollectionId: eventId,
+          bucketName: process.env.NEXT_PUBLIC_S3_FRAMES_BUCKET_NAME,
+        }),
+      });
+
+      const result = await response.json();
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to process frames');
+      }
+
+      // Show success message or update UI as needed
+      console.log(`Successfully queued ${result.messagesSent} frames for processing`);
+    } catch (error) {
+      console.error('Error processing frames:', error);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
   return (
     <>
     <motion.div
@@ -272,16 +315,17 @@ export default function Frames() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
     >
+      
       <FilterBar 
         title={"Frames"}
-        isUploadOpen={isUploadOpen}
-        setIsUploadOpen={setIsUploadOpen}
         selectedCount={selectedFrames.size}
         onDeleteSelected={handleDeleteSelected}
+        onProcessFrames={handleProcessFrames}
       />
 
       {userId && (
         <div className="mb-6">
+
           <UploadButton 
             isOpen={isUploadOpen} 
             onOpenChange={setIsUploadOpen} 
@@ -295,14 +339,13 @@ export default function Frames() {
         {isLoading ? (
           <motion.div 
             key="loading"
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           >
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="aspect-square bg-gray-100 animate-pulse rounded-lg" />
-            ))}
+           <div className="absolute top-0 bottom-0 left-0 right-0 h-full w-full flex items-center justify-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-theme-primary"></div>
+            </div>
           </motion.div>
         ) : (
           <motion.div 
@@ -312,6 +355,7 @@ export default function Frames() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           >
+            
             {paginatedFrames.map((frame, index) => (
               <motion.div
                 key={frame.frameId}
@@ -319,17 +363,18 @@ export default function Frames() {
                 animate={{ opacity: 1 }}
                 transition={{ delay: index * 0.1, duration: 0.5 }}
               >
-                <PhotoCard 
+              
+                <FrameCard 
                   s3Key={frame.s3Key || ''}
-                  thumbnail={`https://${process.env.NEXT_PUBLIC_VIDEOS_CDN_DOMAIN}/${frame.thumbnail}`||''}
+                  thumbnail={`https://${process.env.NEXT_PUBLIC_FRAMES_CDN_DOMAIN}/${frame.s3Key}`||''}
                   // thumbnail={frame.thumbnail || ''}
                   fileName={frame.fileName || ''}
                   peopleTagged={frame.taggedPeopleCount || 0}
-                  status={(frame.recognitionStatus as 'uploaded' | 'processing' | 'processed' | 'failed') || 'processing'}
+                  recognitionStatus={(frame.recognitionStatus as 'uploaded' | 'processing' | 'processed' | 'failed') || 'processing'}
                   isSelected={selectedFrames.has(frame.frameId)}
                   eventId={eventId}
                   onSelect={(e) => handleFrameSelect(frame.frameId, e)}
-                  photoId={frame.frameId}
+                  frameId={frame.frameId}
                 />
               </motion.div>
             ))}

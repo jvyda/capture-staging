@@ -56,7 +56,7 @@ export default function PhotoPage() {
   const startPosRef = useRef<{ x: number; y: number } | null>(null);
   const [selectedPhoto, setSelectedPhoto] = useState(null);
   const isFirstMount = useRef(true);
-  const isFirstPhotoFetch = useRef(true);
+  const isFirstFrameFetch = useRef(true);
   const [tagDialog, setTagDialog] = useState<TagDialogState>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [currentSelection, setCurrentSelection] = useState<Selection | null>(null);
@@ -66,33 +66,33 @@ export default function PhotoPage() {
     phone: "",
     notes: "",
   });
-  type PhotoType = Schema["Photos"]["type"];
+  type FrameType = Schema["Frames"]["type"];
   const [isLoading, setIsLoading] = useState(false);
 
   const eventId = params?.eventId as string;
-  const photoId = params?.photoId as string;
-  const [photo, setPhoto] = useState<PhotoType | null>(null);
+  const frameId = params?.frameId as string;
+  const [frame, setFrame] = useState<FrameType | null>(null);
   const [isTagging, setIsTagging] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
 
   const [isSaving, setIsSaving] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
-  async function getPhotoWithFaces(photoId: string) {
+  async function getPhotoWithFaces(frameId: string) {
     try {
       const [photoResponse, facesResponse] = await Promise.all([
-        client.models.Photos.get({ photoId }),
-        client.models.Faces.list({ filter: { photoId: { eq: photoId } } }),
+        client.models.Frames.get({ frameId }),
+        client.models.Faces.list({ filter: { frameId: { eq: frameId } } }),
       ]);
   
-      const photo = photoResponse.data;
+      const frame = photoResponse.data;
       const faces = facesResponse.data;
   
-      if (!photo || !faces) {
+      if (!frame || !faces) {
         console.error('Photo or faces not found');
         return null;
       }
-      setPhoto({
-        ...photo,
+      setFrame({
+        ...frame,
         faces,
       })
     //   return {
@@ -124,30 +124,16 @@ export default function PhotoPage() {
 
   // Fetch event details when eventId changes
   useEffect(() => {
-    if (!photoId) return;
-    if (isFirstPhotoFetch.current) {
-         getPhotoWithFaces(photoId)
-    //   const fetchEventDetails = async () => {
-    //     try {
-    //       const { data: photo } = await client.models.Photos.get({
-    //         photoId: photoId,
-    //       });
-    //       console.log(photo)
-    //       if (photo) {
-    //         setPhoto(photo);
-    //       }
-    //     } catch (error) {
-    //       console.error("Error fetching event details:", error);
-    //     }
-    //   };
+    if (!frameId) return;
+    if (isFirstFrameFetch.current) {
+         getPhotoWithFaces(frameId)
 
-    //   fetchEventDetails();
-      isFirstPhotoFetch.current = false;
+      isFirstFrameFetch.current = false;
     }
-  }, [photoId]); // Fetch event details when eventId changes
+  }, [frameId]); // Fetch event details when eventId changes
 
   const handleBack = () => {
-    router.push(`/events/${eventId}/photos`);
+    router.push(`/events/${eventId}/frames`);
   };
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     if (!isTagging || !imageRef.current) return;
@@ -206,7 +192,7 @@ export default function PhotoPage() {
       setIsLoading(true);
       
       // Add API call here to save the tag
-      const response = await fetch(`/api/events/${params.eventId}/photos/${photo.photoId}/tags`, {
+      const response = await fetch(`/api/events/${params.eventId}/frames/${frame.frameId}/tags`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -224,9 +210,9 @@ export default function PhotoPage() {
         throw new Error('Failed to add tag');
       }
 
-      // Refresh photo data
-      const updatedPhoto = await response.json();
-      setPhoto(updatedPhoto);
+      // Refresh frame data
+      const updatedFrame = await response.json();
+      setFrame(updatedFrame);
       toast.success("Person tagged successfully");
       setTagDialog(null);
       setSelectedPerson("");
@@ -239,37 +225,7 @@ export default function PhotoPage() {
     }
   };
 
-  const handleUpdatePhoto = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-
-    try {
-      const response = await fetch(`/api/events/${params.eventId}/photos/${photo.photoId}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          metadata: photo.metadata,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update photo');
-      }
-
-      const updatedPhoto = await response.json();
-      setPhoto(updatedPhoto);
-      toast.success("Photo details updated successfully");
-      setIsEditing(false);
-    } catch (error) {
-      console.error('Error updating photo:', error);
-      toast.error("Failed to update photo details");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
+ 
   return (
     <div className="max-w mx-auto space-y-6">
       <div className="flex items-center justify-between">
@@ -283,7 +239,7 @@ export default function PhotoPage() {
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <h1 className="text-2xl font-bold text-theme-primary">
-            Photo Insignts
+            Frame Insignts
           </h1>
         </div>
 
@@ -316,11 +272,11 @@ export default function PhotoPage() {
             >
                 <Image
                 ref={imageRef}
-                  src={`https://${process.env.NEXT_PUBLIC_PHOTOS_CDN_DOMAIN}/${photo?.s3Key}`||''}
-                  alt={photo?.fileName || 'Unknown Person'}
+                  src={`https://${process.env.NEXT_PUBLIC_FRAMES_CDN_DOMAIN}/${frame?.s3Key}`||''}
+                  alt={frame?.fileName || 'Unknown Person'}
                   fill
                   className="object-cover"
-                  sizes="(max-width: 2400px) 100vw, (max-width: 2400px) 50vw, 33vw"
+                  sizes="(max-width: 4800px) 100vw, (max-width: 4800px) 50vw, 33vw"
                 />
              
               {/* {photo.faces && Object.entries(photo.faces).map((face) => (
@@ -358,7 +314,7 @@ export default function PhotoPage() {
           </div>
           <div className="col-span-1 bg-background">
           <div className="grid grid-cols-3 gap-4">
-          {photo?.faces.map((face) => (
+          {frame?.faces.map((face) => (
           <motion.div
           key={face.faceId}
           className="relative aspect-square rounded-lg overflow-hidden group"

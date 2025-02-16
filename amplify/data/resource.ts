@@ -57,7 +57,7 @@ const schema = a.schema({
       videosTotal: a.integer(),
       coverImage: a.string(),
       eventStatus: a.string(),
-      user: a.belongsTo('Users', 'userId')
+      event: a.belongsTo('Users', 'userId')
     })
     .identifier(['eventId'])
     .authorization((allow) => [allow.publicApiKey()]),
@@ -129,7 +129,7 @@ const schema = a.schema({
       imageWidth:a.integer(),
       isArchived:a.boolean(),
       recognitionCollectionId:a.string(),
-      recognitionStatus:a.boolean(),
+      recognitionStatus:a.string(),
       s3Bucket:a.string(),
       s3Key:a.string(),
       taggedFaces:a.json(),
@@ -138,7 +138,10 @@ const schema = a.schema({
       taggedPeopleCount:a.integer(),
       thumbnail:a.string(),	
       userId: a.string(),
-      videoId: a.string()
+      videoId: a.string(),
+       // Add relationships
+       faces: a.hasMany('Faces', 'frameId'),
+       
     })
     .identifier(['frameId'])
     .authorization((allow) => [allow.publicApiKey()]),
@@ -166,7 +169,9 @@ const schema = a.schema({
       taggedPeopleCount:a.integer(),
       thumbnail:a.string(),	
       userId: a.string(),
-      videoId: a.string()
+      videoId: a.string(),
+      // Add relationships
+      faces: a.hasMany('Faces', 'photoId'),
     })
     .identifier(['photoId'])
     .authorization((allow) => [allow.publicApiKey()]),
@@ -205,7 +210,11 @@ const schema = a.schema({
       smile: a.boolean(),
       sourceImage: a.string(),
       sunglasses: a.boolean(),
-      userId: a.string()
+      userId: a.string(),
+      // Add relationships
+      person: a.belongsTo('Persons', 'personId'),
+      photo: a.belongsTo('Photos', 'photoId'),
+      frame: a.belongsTo('Frames', 'frameId')
     })
     .identifier(['faceId'])
     .authorization((allow) => [allow.publicApiKey()]),
@@ -231,6 +240,8 @@ const schema = a.schema({
       updatedAt: a.timestamp(),
       userId: a.string(),
       videoId: a.string(),
+      // Add relationships
+      faces: a.hasMany('Faces', 'personId'),
       video: a.belongsTo('Videos', 'videoId')
     })
     .identifier(['personId'])

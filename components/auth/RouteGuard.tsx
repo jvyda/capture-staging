@@ -56,7 +56,9 @@ export function RouteGuard({ children }: RouteGuardProps) {
   // Show loading spinner while checking authentication
   if (isLoading) {
     return (
-      <LoadingSpinner />
+      <div className="absolute top-0 bottom-0 left-0 right-0 h-full w-full flex items-center justify-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-theme-primary"></div>
+            </div>
     );
   }
 

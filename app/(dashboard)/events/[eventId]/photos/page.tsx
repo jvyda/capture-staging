@@ -6,6 +6,8 @@ import { PhotoCard } from "@/components/photos/PhotoCard";
 import { Pagination } from "@/components/shared/Pagination";
 import { FilterBar } from "@/components/photos/FilterBar";
 import { toast } from "sonner";
+
+
 import { Info, Check, Ban } from 'lucide-react'
 import {
   AlertDialog,
@@ -44,7 +46,7 @@ export default function Photos() {
   const params = useParams();
   const isFirstMount = useRef(true);
   const isFirstPhotoFetch = useRef(true);
-
+  const [autoDetectEnabled, setAutoDetectEnabled] = useState(false);
   const eventId = params?.eventId as string;
   const [userId, setUserId] = useState<string | null>(null);
   const [rekognitionCollectionId, setRekognitionCollectionId] = useState<string | null>(null);
@@ -86,72 +88,231 @@ export default function Photos() {
   }
   }, [userId]);
 
+  const [photos, setPhotos] = useState<Photo[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [selectedPhotos, setSelectedPhotos] = useState<Set<string>>(new Set());
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const photosPerPage = 24;
+  const [totalPhotos, setTotalPhotos] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
-  const [photos, setPhotos] = useState<Photos[]>([]);
-  const lastUpdateRef = useRef<string>('');
+  const [nextToken, setNextToken] = useState<string | null>(null);
+  const photosPerPage = 24;
+  const pageTokensCache = useRef<Map<number, string>>(new Map());
 
-  // Add subscription for real-time updates
+  // Fetch total count of photos
   useEffect(() => {
     if (!eventId) return;
-  
-    const sub = client.models.Photos.observeQuery()
-      .subscribe({
-        next: ({ items }) => {
-          try {
-            // Filter photos for current event, exclude archived and deleted photos
-            const eventPhotos = items
-              .filter(photo => 
-                photo && photo.photoId && // Ensure photo object and photoId exist
-                photo.eventId === eventId && 
-                !photo.isArchived
-              )
-              .sort((a, b) => 
-                new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
-              );
-            
-            setPhotos(eventPhotos);
-          } catch (error) {
-            console.error('Error processing subscription data:', error);
+
+    const fetchTotalCount = async () => {
+      try {
+        const { data: countResult } = await client.models.Photos.list({
+          filter: {
+            eventId: { eq: eventId },
+            isArchived: { eq: false }
           }
-        },
-        error: (error) => {
-          console.error('Subscription error:', error);
-          toast.error('Error syncing photos');
-        }
-      });
-  
-    return () => sub.unsubscribe();
+          
+        })
+        setTotalPhotos(countResult.length);
+      } catch (error) {
+        console.error('Error fetching total count:', error);
+      }
+    };
+
+    fetchTotalCount();
   }, [eventId]);
 
-  // Initial photos fetch
+  // Fetch photos for current page
   useEffect(() => {
-    const fetchPhotos = async () => {
-      if (!eventId) return;
+    if (!eventId) return;
 
+    const fetchPhotos = async () => {
+      setIsLoading(true);
       try {
-        const response = await client.models.Photos.list({
+        // Get cached token for the requested page
+        const cachedToken = pageTokensCache.current.get(currentPage);
+        
+        const { data: photos, nextToken: newNextToken } = await client.models.Photos.list({
           filter: {
             eventId: { eq: eventId },
             isArchived: { eq: false }
           },
-          // sort: {
-          //   createdAt: 'DESC'
-          // }
+          limit: photosPerPage,
+          nextToken: cachedToken || null,
+          
         });
 
-        setPhotos(response.data);
+        // Cache the nextToken for the next page
+        if (newNextToken) {
+          pageTokensCache.current.set(currentPage + 1, newNextToken);
+        }
+
+        setPhotos(photos);
+        setNextToken(newNextToken);
+        setIsLoading(false);
       } catch (error) {
         console.error('Error fetching photos:', error);
-        toast.error('Failed to load photos');
+        setIsLoading(false);
       }
     };
 
     fetchPhotos();
+  }, [eventId, currentPage]);
+
+  // Real-time updates subscription
+  useEffect(() => {
+    if (!eventId) return;
+
+    let isSubscribed = true;
+  
+    const sub = client.models.Photos.observeQuery({
+      filter: {
+        eventId: { eq: eventId },
+        isArchived: { eq: false }
+      },
+      limit: photosPerPage,
+      nextToken,
+    })
+    .subscribe({
+      next: ({ items, isSynced }) => {
+        if (!isSubscribed) return;
+
+        try {
+          // Only update if changes affect current page
+          const validPhotos = items
+            .filter(photo => {
+              if (!photo || typeof photo !== 'object') return false;
+              if (!photo.photoId || !photo.eventId) return false;
+              if (photo.eventId !== eventId) return false;
+              if (photo.isArchived === true) return false;
+              return true;
+            })
+            .sort((a, b) => 
+              new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+            );
+
+          // Update photos if changes affect current page
+          setPhotos(prevPhotos => {
+            const shouldUpdate = validPhotos.some(newPhoto => {
+              const existingPhoto = prevPhotos.find(p => p.photoId === newPhoto.photoId);
+              return !existingPhoto || existingPhoto.updatedAt !== newPhoto.updatedAt;
+            });
+
+            return shouldUpdate ? validPhotos : prevPhotos;
+          });
+
+          // Update total count if needed
+          if (isSynced) {
+            const fetchNewCount = async () => {
+              const { data: newCount } = await client.models.Photos.list({
+                filter: {
+                  eventId: { eq: eventId },
+                  isArchived: { eq: false }
+                }
+              });
+              setTotalPhotos(newCount.length);
+            };
+            fetchNewCount();
+          }
+        } catch (error) {
+          console.error('Error processing subscription data:', error);
+        }
+      },
+      error: (error) => {
+        console.error('Subscription error:', error);
+        if (isSubscribed) {
+          toast.error('Error syncing photos');
+        }
+      }
+    });
+
+    return () => {
+      isSubscribed = false;
+      sub.unsubscribe();
+    };
   }, [eventId]);
+
+  // Pagination controls
+  const totalPages = Math.ceil(totalPhotos / photosPerPage);
+
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setCurrentPage(newPage);
+    }
+  };
+
+  const [selectedPhotos, setSelectedPhotos] = useState<Set<string>>(new Set());
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+const [isProcessing, setIsProcessing] = useState(false);
+  const handlePhotoSelect = (id: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    const newSelected = new Set(selectedPhotos);
+    if (e.shiftKey && selectedPhotos.size > 0) {
+      // Find the last selected photo index
+      const lastSelected = Array.from(selectedPhotos)[selectedPhotos.size - 1];
+      const lastIndex = photos.findIndex(photo => photo.photoId === lastSelected);
+      const currentIndex = photos.findIndex(photo => photo.photoId === id);
+      
+      // Select all photos between last selected and current
+      const start = Math.min(lastIndex, currentIndex);
+      const end = Math.max(lastIndex, currentIndex);
+      
+      for (let i = start; i <= end; i++) {
+        newSelected.add(photos[i].photoId);
+      }
+    } else {
+      if (selectedPhotos.has(id)) {
+        newSelected.delete(id);
+      } else {
+        newSelected.add(id);
+      }
+    }
+    setSelectedPhotos(newSelected);
+  };
+
+  const handleDeleteSelected = () => {
+    setShowDeleteDialog(true);
+  };
+
+  const confirmDelete = async () => {
+    try {
+      const photosToArchive = Array.from(selectedPhotos);
+
+      // Optimistically update UI
+      setPhotos(prevPhotos => prevPhotos.filter(photo => !selectedPhotos.has(photo.photoId)));
+      setShowDeleteDialog(false);
+      setSelectedPhotos(new Set());
+
+      // Update photos in parallel
+      await Promise.all(
+        photosToArchive.map(async (photoId) => {
+          await client.models.Photos.update({
+            photoId,
+            isArchived: true
+          });
+        })
+      );
+      
+      console.log('Successfully archived all selected photos');
+    } catch (error) {
+      console.error('Error archiving photos:', error);
+      // Refresh the data in case of error
+      const fetchPhotos = async () => {
+        const { data } = await client.models.Photos.list({
+          filter: {
+            and: [
+              { userId: { eq: userId ?? undefined } },
+              { eventId: { eq: eventId ?? undefined } },
+              { or: [
+                { isArchived: { eq: false } },
+                { isArchived: { attributeExists: false } }
+              ]}
+            ]
+          },
+          limit: 100
+        });
+        setPhotos(data);
+      };
+      fetchPhotos();
+      setShowDeleteDialog(false);
+    }
+  };
 
   const startFaceDetection = async (photoId: string, s3Key: string, bucketName: string) => {
     try {
@@ -203,187 +364,6 @@ export default function Photos() {
     }
   };
 
-
-  /**
-   * Effect hook to manage photo data fetching and real-time updates
-   * Implements AWS best practices for subscription handling and error management
-   */
-  useEffect(() => {
-    if (userId && eventId) {
-      setIsLoading(true);
-      let isSubscribed = true;
-      let syncInProgress = false;
-
-      /**
-       * Fetches photos with the current filter criteria
-       * @returns Promise<void>
-       */
-      const fetchPhotos = async () => {
-        if (syncInProgress) return;
-        
-        try {
-          syncInProgress = true;
-          const { data } = await client.models.Photos.list({
-            filter: {
-              and: [
-                { userId: { eq: userId } },
-                { eventId: { eq: eventId } },
-                { or: [
-                  { isArchived: { eq: false } },
-                  { isArchived: { attributeExists: false } }
-                ]}
-              ]
-            },
-            limit: 100
-          });
-          
-          if (isSubscribed) {
-            const processedPhotos = data.map(processPhotoData);
-            setPhotos(processedPhotos);
-            setIsLoading(false);
-          }
-        } catch (error) {
-          console.error('Error fetching photos:', error);
-          if (isSubscribed) {
-            setIsLoading(false);
-          }
-        } finally {
-          syncInProgress = false;
-        }
-      };
-
-      // Set up real-time subscription with AWS best practices
-      const subscription = client.models.Photos.observeQuery({
-        filter: {
-          and: [
-            { userId: { eq: userId } },
-            { eventId: { eq: eventId } }
-          ]
-        }
-      }).subscribe({
-        next: ({ items, isSynced }) => {
-          if (!isSubscribed) return;
-          
-          console.log('Subscription update:', {
-            items: items.length,
-            synced: isSynced,
-            timestamp: new Date().toISOString()
-          });
-
-          // Filter out archived photos in memory
-          const nonArchivedPhotos = items.filter(photo => !photo.isArchived);
-          const processedPhotos = nonArchivedPhotos.map(processPhotoData);
-          setPhotos(processedPhotos);
-        },
-        error: (error: any) => {
-          const errorDetails = {
-            type: error?.type,
-            errors: error?.error?.errors,
-            timestamp: new Date().toISOString(),
-            items: error?.error?.items
-          };
-          
-          console.log('Subscription event:', errorDetails);
-
-          // Handle sync events
-          switch (error?.type) {
-            case 'onCreate':
-              // Refresh to get the new item
-              fetchPhotos();
-              break;
-            case 'onDelete':
-            case 'onUpdate':
-              // For updates and deletes, let the next callback handle it
-              // as it will have the latest state
-              break;
-            default:
-              console.error('Unexpected DataStore error:', error);
-              fetchPhotos();
-          }
-        }
-      });
-
-      // Initial fetch
-      fetchPhotos();
-
-      // Cleanup subscription and prevent memory leaks
-      return () => {
-        console.log('Cleaning up subscription and resources...');
-        isSubscribed = false;
-        if (subscription) {
-          subscription.unsubscribe();
-        }
-      };
-    }
-  }, [userId, eventId]);
-
-  /**
-   * Processes raw photo data into the format expected by the UI
-   * @param photo Raw photo data from AWS
-   * @returns Processed photo data
-   */
-  const processPhotoData = (photo: any) => ({
-    ...photo,
-    s3Key: photo.s3Key || '',
-    fileName: photo.fileName || '',
-    peopleTagged: photo.taggedPeopleCount || 0,
-    status: photo.recognitionStatus || 'processing'
-  });
-
-  /**
-   * Handles archiving of selected photos
-   */
-  const confirmDelete = async () => {
-    try {
-      const photosToArchive = Array.from(selectedPhotos);
-      console.log(`Archiving ${selectedPhotos.size} photos:`, photosToArchive);
-
-      // Optimistically update UI
-      setPhotos(prevPhotos => prevPhotos.filter(photo => !selectedPhotos.has(photo.photoId)));
-      setShowDeleteDialog(false);
-      setSelectedPhotos(new Set());
-
-      // Update photos in parallel
-      await Promise.all(
-        photosToArchive.map(async (photoId) => {
-          await client.models.Photos.update({
-            photoId,
-            isArchived: true
-          });
-        })
-      );
-      
-      console.log('Successfully archived all selected photos');
-    } catch (error) {
-      console.error('Error archiving photos:', error);
-      // Refresh the data in case of error
-      const fetchPhotos = async () => {
-        const { data } = await client.models.Photos.list({
-          filter: {
-            and: [
-              { userId: { eq: userId ?? undefined } },
-              { eventId: { eq: eventId ?? undefined } },
-              { or: [
-                { isArchived: { eq: false } },
-                { isArchived: { attributeExists: false } }
-              ]}
-            ]
-          },
-          limit: 100
-        });
-        setPhotos(data);
-      };
-      fetchPhotos();
-      setShowDeleteDialog(false);
-    }
-  };
-
-  /**
-   * Compresses an image and returns it as a Blob
-   * @param file Original image file
-   * @param quality Compression quality (0 to 1)
-   * @returns Promise<{ blob: Blob; width: number; height: number }>
-   */
   const compressImage = async (file: File, quality: number = 0.85) => {
     return new Promise<{ blob: Blob; width: number; height: number }>(
       async (resolve, reject) => {
@@ -429,12 +409,6 @@ export default function Photos() {
     );
   };
 
-  /**
-   * Creates a thumbnail maintaining aspect ratio
-   * @param file Original image file
-   * @param maxDimension Maximum width or height
-   * @returns Promise<Blob>
-   */
   const createThumbnail = async (file: File, maxDimension: number = 300) => {
     return new Promise<Blob>(async (resolve, reject) => {
       const img = new Image();
@@ -615,32 +589,32 @@ export default function Photos() {
         };
 
         // Create the database entry
-const { data: newPhoto, errors } = await client.models.Photos.create(dbEntry);
+        const { data: newPhoto, errors } = await client.models.Photos.create(dbEntry);
 
-if (errors) {
-  throw new Error('Failed to create database entry');
-}
+        if (errors) {
+          throw new Error('Failed to create database entry');
+        }
 
-// Update photos list with proper typing
-setPhotos(prevPhotos => [dbEntry as Photo, ...prevPhotos]);
+        // Remove this line since the subscription will handle the update
+        // setPhotos(prevPhotos => [dbEntry as Photo, ...prevPhotos]);
 
-// Show success message
-toast.success(`${file.name} uploaded successfully`, {
-  id: toastId,
-  duration: 2000,
-});
+        toast.success(`${file.name} uploaded successfully`, {
+          id: toastId,
+          duration: 2000,
+        });
 
-// Only trigger face detection if we have all required data
-if (newPhoto?.photoId && key && process.env.NEXT_PUBLIC_S3_PHOTOS_BUCKET_NAME) {
-  // Delay face detection slightly to ensure DB entry is fully propagated
-  setTimeout(() => {
-    startFaceDetection(
-      newPhoto.photoId,
-      key,
-      process.env.NEXT_PUBLIC_S3_PHOTOS_BUCKET_NAME!
-    );
-  }, 1000);
-}
+        // Start face detection
+        if (autoDetectEnabled) {
+          if (newPhoto?.photoId && key && process.env.NEXT_PUBLIC_S3_PHOTOS_BUCKET_NAME) {
+            setTimeout(() => {
+              startFaceDetection(
+                newPhoto.photoId,
+                key,
+                process.env.NEXT_PUBLIC_S3_PHOTOS_BUCKET_NAME!
+              );
+            }, 1000);
+          }
+        }
 
       } catch (error) {
         console.error("Upload error:", error);
@@ -651,41 +625,39 @@ if (newPhoto?.photoId && key && process.env.NEXT_PUBLIC_S3_PHOTOS_BUCKET_NAME) {
       }
     }
   };
+  const handleProcessPhotos = async () => {
+    console.log('Processing photos...');
+    if (!userId || !eventId) return;
+    
+    setIsProcessing(true);
+    try {
+      const response = await fetch('/api/sqs/addToPhotosDetectionQueueBulk', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId,
+          eventId,
+          rekognitionCollectionId: eventId,
+          bucketName: process.env.NEXT_PUBLIC_S3_PHOTOS_BUCKET_NAME,
+        }),
+      });
 
-  const handlePhotoSelect = (id: string, e: React.MouseEvent) => {
-    e.preventDefault();
-    const newSelected = new Set(selectedPhotos);
-    if (e.shiftKey && selectedPhotos.size > 0) {
-      // Find the last selected photo index
-      const lastSelected = Array.from(selectedPhotos)[selectedPhotos.size - 1];
-      const lastIndex = paginatedPhotos.findIndex(photo => photo.photoId === lastSelected);
-      const currentIndex = paginatedPhotos.findIndex(photo => photo.photoId === id);
+      const result = await response.json();
       
-      // Select all photos between last selected and current
-      const start = Math.min(lastIndex, currentIndex);
-      const end = Math.max(lastIndex, currentIndex);
-      
-      for (let i = start; i <= end; i++) {
-        newSelected.add(paginatedPhotos[i].photoId);
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to process frames');
       }
-    } else {
-      if (selectedPhotos.has(id)) {
-        newSelected.delete(id);
-      } else {
-        newSelected.add(id);
-      }
+
+      // Show success message or update UI as needed
+      console.log(`Successfully queued ${result.messagesSent} frames for processing`);
+    } catch (error) {
+      console.error('Error processing frames:', error);
+    } finally {
+      setIsProcessing(false);
     }
-    setSelectedPhotos(newSelected);
   };
-
-  const handleDeleteSelected = () => {
-    setShowDeleteDialog(true);
-  };
-
-  const totalPages = Math.ceil(photos.length / photosPerPage);
-  const startIndex = (currentPage - 1) * photosPerPage;
-  const paginatedPhotos = photos.slice(startIndex, startIndex + photosPerPage);
-
   return (
     <>
     <motion.div
@@ -695,10 +667,13 @@ if (newPhoto?.photoId && key && process.env.NEXT_PUBLIC_S3_PHOTOS_BUCKET_NAME) {
       transition={{ duration: 0.5 }}
     >
       <FilterBar
-        title={`Photos ${photos.length}`}
+        title={`Photos ${totalPhotos}`}
         selectedCount={selectedPhotos.size}
         onDeleteSelected={handleDeleteSelected}
         onFileSelect={handleFileSelect}
+        onProcessPhotos={handleProcessPhotos}
+        autoDetectEnabled={autoDetectEnabled}
+        onAutoDetectChange={setAutoDetectEnabled}
       />
 
       <AnimatePresence mode="wait">
@@ -722,7 +697,7 @@ if (newPhoto?.photoId && key && process.env.NEXT_PUBLIC_S3_PHOTOS_BUCKET_NAME) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           >
-            {paginatedPhotos.map((photo, index) => (
+            {photos.map((photo, index) => (
               <motion.div
                 key={photo.photoId}
                 initial={{ opacity: 0 }}
@@ -750,7 +725,7 @@ if (newPhoto?.photoId && key && process.env.NEXT_PUBLIC_S3_PHOTOS_BUCKET_NAME) {
         <Pagination
           currentPage={currentPage}
           totalPages={totalPages}
-          onPageChange={setCurrentPage}
+          onPageChange={handlePageChange}
         />
       )}
 
@@ -786,3 +761,4 @@ if (newPhoto?.photoId && key && process.env.NEXT_PUBLIC_S3_PHOTOS_BUCKET_NAME) {
     </>
   );
 }
+

@@ -29,7 +29,7 @@ export default function RootLayout({
         <RouteGuard>
           <ClientLayout>
             {children}
-            <img src="/logo.svg" alt="CaptureJoy" className="fixed bottom-8 right-8 select-none" />
+            <img src="/logo.svg" alt="CaptureJoy" className="fixed top-4 left-4 select-none z-50" />
           </ClientLayout>
         </RouteGuard>
         <Toaster 
