@@ -31,7 +31,7 @@ export async function POST(request:Request) {
       };
       
       const params = {
-        QueueUrl: process.env.SQS_FACE_DETECTION_QUEUE_URL,
+        QueueUrl: process.env.NEXT_PUBLIC_SQS_FACE_DETECTION_QUEUE_URL,
         MessageBody: JSON.stringify(messageBody),
         MessageAttributes: {
           "MessageType": {
