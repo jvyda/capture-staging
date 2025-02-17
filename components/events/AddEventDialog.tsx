@@ -358,7 +358,7 @@ export function AddEventDialog({ open, onOpenChange }: AddEventDialogProps) {
                 Cancel
               </Button>
               <Button
-                className="bg-theme-primary hover:bg-theme-primary-alpha/90"
+                className="bg-black/50 hover:bg-black/90"
                 onClick={handleCreateEvent}
                 disabled={isSubmitting}
               >
