@@ -4,8 +4,8 @@ import { NextResponse } from "next/server";
 const rekognitionClient = new RekognitionClient({
     region: process.env.NEXT_PUBLIC_AWS_REGION || 'ap-south-1', // e.g., "us-east-1"
     credentials: async () => ({
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!
+        accessKeyId: process.env.NEXT_PUBLIC_AWS_ACCESS_KEY_ID!,
+        secretAccessKey: process.env.NEXT_PUBLIC_AWS_SECRET_ACCESS_KEY!
       })
   });
 
