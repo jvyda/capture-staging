@@ -31,7 +31,7 @@ export async function POST(request:Request) {
       };
       
       const params = {
-        QueueUrl: process.env.NEXT_PUBLIC_SQS_FACE_DETECTION_QUEUE_URL,
+        QueueUrl: 'https://sqs.ap-south-1.amazonaws.com/430118859146/faceDetectionQueue',
         MessageBody: JSON.stringify(messageBody),
         MessageAttributes: {
           "MessageType": {

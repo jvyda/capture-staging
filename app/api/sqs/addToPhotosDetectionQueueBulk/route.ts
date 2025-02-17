@@ -46,7 +46,7 @@ async function sendMessagesBatch(messages: any[]) {
   for (const batch of batches) {
     try {
       await sqsClient.send(new SendMessageBatchCommand({
-        QueueUrl: process.env.NEXT_PUBLIC_SQS_FACE_DETECTION_QUEUE_URL,
+        QueueUrl: 'https://sqs.ap-south-1.amazonaws.com/430118859146/faceDetectionQueue',
         Entries: batch
       }));
       messagesSent += batch.length;
