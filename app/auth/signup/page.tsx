@@ -203,7 +203,7 @@ export default function SignUpPage() {
 
           <Button
             type="submit"
-            className="w-full bg-background-med hover:bg-theme-primary-alpha/90"
+            className="w-full bg-black/50 hover:bg-black/90"
             disabled={isLoading}
           >
             {isLoading ? (

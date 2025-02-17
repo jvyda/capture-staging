@@ -59,7 +59,7 @@ export function EventEditPageClient({ eventData }: EventEditPageClientProps) {
             variant="ghost"
             size="icon"
             onClick={handleBack}
-            className="hover:bg-theme-highlight-alpha/20"
+            className="hover:bg-black/20"
           >
             <ArrowLeft className="w-5 h-5" />
           </Button>
@@ -77,7 +77,7 @@ export function EventEditPageClient({ eventData }: EventEditPageClientProps) {
           </Button>
           <Button
             onClick={handleSave}
-            className="bg-theme-primary hover:bg-theme-primary-alpha/90"
+            className="bg-background hover:bg-black/50"
             disabled={isSaving}
           >
             {isSaving ? (

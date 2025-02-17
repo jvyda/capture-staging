@@ -162,7 +162,7 @@ export function EventPageClient({ eventData }: EventPageClientProps) {
         </div>
         <Button
           onClick={handleEdit}
-          className="bg-theme-primary hover:bg-theme-primary-alpha/90"
+          className="bg-background hover:bg-black/50"
         >
           <Edit2 className="w-4 h-4 mr-2" />
           Edit Event
