@@ -65,7 +65,7 @@ export default function SignUpPage() {
       });
 
       if (isSignUpComplete) {
-        router.push('/auth/signin');
+        router.push('/auth/login');
       } else {
         switch (nextStep.signUpStep) {
           case 'CONFIRM_SIGN_UP':

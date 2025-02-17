@@ -42,7 +42,7 @@ export default function ConfirmSignUpPage() {
       setSuccess('Email confirmed successfully!');
       // Redirect to sign in page after a short delay
       setTimeout(() => {
-        router.push('/auth/signin');
+        router.push('/auth/login');
       }, 2000);
     } catch (error: any) {
       console.error('Confirmation error:', error);
