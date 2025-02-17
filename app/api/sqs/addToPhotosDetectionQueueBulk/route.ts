@@ -6,8 +6,6 @@ import type { Schema } from '@/amplify/data/resource';
 import { Amplify } from 'aws-amplify';
 import outputs from '@/amplify_outputs.json';
 
-
-
 // Configure Amplify for server-side usage
 Amplify.configure(outputs, { ssr: true });
 
@@ -62,7 +60,7 @@ async function sendMessagesBatch(messages: any[]) {
 export async function POST(request: Request) {
     // Parse the incoming request body
     const data = await request.json();
-    const { userId, eventId, bucketName,rekognitionCollectionId } = data;
+    const { userId, eventId, bucketName, rekognitionCollectionId } = data;
 
     if (!userId || !eventId) {
       return NextResponse.json(
@@ -76,21 +74,37 @@ export async function POST(request: Request) {
     }
 
   try {
-    // Retrieve all photos from the table with filters
-    const { data: photos } = await client.models.Photos.list({
-      filter: {
-        and: [
-          { userId: { eq: userId } },
-          { eventId: { eq: eventId } },
-          { isArchived: { eq: false } },
-          { recognitionStatus: { ne: 'processed' } },
-          {excludeFromFaceDetection: { eq: false }}
+    let allPhotos: any[] = [];
+    let nextToken: string | undefined;
+    let pageCount = 0;
+    
+    // Fetch all photos using pagination with optimal batch size
+    do {
+      console.log(`Fetching page ${pageCount + 1} of photos...`);
+      const { data: photos, nextToken: newNextToken } = await client.models.Photos.list({
+        filter: {
+          and: [
+            { userId: { eq: userId } },
+            { eventId: { eq: eventId } },
+            { isArchived: { eq: false } },
+            { recognitionStatus: { ne: 'processed' } },
+            { excludeFromFaceDetection: { eq: false }}
+          ]
+        },
+        limit: 100, // Optimal batch size for performance and reliability
+        nextToken: nextToken
+      });
 
-        ]
+      if (photos && photos.length > 0) {
+        allPhotos = allPhotos.concat(photos);
+        console.log(`Retrieved ${photos.length} photos in current batch. Total photos: ${allPhotos.length}`);
       }
-    });
+      
+      nextToken = newNextToken||undefined;
+      pageCount++;
+    } while (nextToken);
 
-    if (!photos || photos.length === 0) {
+    if (allPhotos.length === 0) {
       return NextResponse.json({
         success: true,
         messagesSent: 0,
@@ -98,8 +112,10 @@ export async function POST(request: Request) {
       });
     }
 
-    // Prepare message bodies for each frame
-    const messages = photos.map(photo => ({
+    console.log(`Total photos to process: ${allPhotos.length} (retrieved in ${pageCount} pages)`);
+
+    // Prepare message bodies for each photo
+    const messages = allPhotos.map(photo => ({
       bucketName: bucketName,
       s3Key: photo.s3Key,
       userId: userId,
@@ -124,7 +140,7 @@ export async function POST(request: Request) {
       success: true,
       messagesSent,
       message: `Successfully queued ${messagesSent} photos for face detection`,
-      totalPhotos: photos.length
+      totalPhotos: allPhotos.length
     });
 
   } catch (error) {

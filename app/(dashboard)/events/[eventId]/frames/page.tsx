@@ -54,7 +54,7 @@ export default function Frames() {
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [selectedFrames, setSelectedFrames] = useState<Set<string>>(new Set());
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const framesPerPage = 24;
+  const framesPerPage = 60;
   const [isLoading, setIsLoading] = useState(true);
   const [frames, setFrames] = useState<Frames[]>([]);
   const lastUpdateRef = useRef<string>('');

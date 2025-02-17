@@ -46,7 +46,7 @@ export function Pagination({ currentPage, totalPages, onPageChange }: Pagination
   const pageNumbers = getPageNumbers();
 
   return (
-    <div className="flex items-center justify-center space-x-2 mt-8">
+    <div className="flex items-center justify-center space-x-2">
       <motion.button
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
@@ -55,7 +55,7 @@ export function Pagination({ currentPage, totalPages, onPageChange }: Pagination
         className={`p-2 rounded-full ${
           currentPage === 1
             ? 'text-theme-secondary-alpha/50 cursor-not-allowed'
-            : 'text-theme-primary hover:bg-theme-highlight-alpha/20'
+            : 'text-theme-primary hover:bg-black/50'
         }`}
       >
         <ChevronLeft className="w-5 h-5" />
@@ -90,8 +90,8 @@ export function Pagination({ currentPage, totalPages, onPageChange }: Pagination
             )}
             <span className={`relative z-10 w-8 h-8 flex items-center justify-center rounded-full text-sm font-medium
               ${isCurrentPage 
-                ? 'text-white' 
-                : 'text-theme-primary hover:bg-theme-highlight-alpha/20'
+                ? 'text-white bg-green-500/50' 
+                : 'text-theme-primary hover:bg-black/90'
               }`}
             >
               {page}
