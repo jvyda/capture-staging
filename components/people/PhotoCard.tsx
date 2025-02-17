@@ -7,7 +7,15 @@ import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import type { Schema } from '@/amplify/data/resource';
 
+
 type PhotoType = Schema['Photos']['type'];
+interface PhotoCardProps extends PhotoType {
+  isSelected?: boolean;
+  onSelect?: (e: React.MouseEvent) => void;
+}
+
+
+// type PhotoType = Schema['Photos']['type'];
 // interface PhotoCardProps extends PhotoType {
 //   s3Key: string;
 //   fileName: string;
@@ -33,7 +41,7 @@ interface PhotoCardUIProps {
 }
 
 // Combine UI props with optional schema fields
-type PhotoCardProps = Partial<Omit<PhotoType, keyof PhotoCardUIProps>> & PhotoCardUIProps;
+// type PhotoCardProps = Partial<Omit<PhotoType, keyof PhotoCardUIProps>> & PhotoCardUIProps;
 
 export function PhotoCard({
   s3Key,
@@ -138,7 +146,7 @@ export function PhotoCard({
               animate={{ opacity: 1, x: 0 }}
               className={`
                 flex items-center px-3 py-1.5 rounded-full backdrop-blur-sm
-                ${(taggedPeopleCount ?? 0) > 0
+                 ${(taggedPeopleCount ?? 0) > 0 
                   ? 'bg-black/30 text-white' 
                   : 'bg-black/70 text-white/70'
                 }

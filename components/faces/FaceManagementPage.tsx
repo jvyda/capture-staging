@@ -19,28 +19,8 @@ type PersonType = Schema['Persons']['type'] & {
 };
 type FaceType = Schema['Faces']['type'] 
 
-interface Person {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  avatar: string;
-  totalFaces: number;
-}
 
-interface Face {
-  id: string;
-  url: string;
-  personId: string;
-  isPrimary: boolean;
-  confidence: number;
-  source: {
-    type: "photo" | "video";
-    id: string;
-    title: string;
-    timestamp?: number;
-  };
-}
+
 
 interface FaceManagementPageProps {
   userId: string | null;
@@ -92,14 +72,10 @@ export function FaceManagementPage({ userId, eventId }: FaceManagementPageProps)
           isArchived: { eq: false }
         },
         limit: peoplePerPage,
-        nextToken: cachedToken || null,
-        sort: {
-          field: 'updatedAt',
-          direction: 'desc'
-        }
+        nextToken: cachedToken || null
       });
       // Then, for each person, get their faces
-  const personsWithFaces = await Promise.all(
+  const personsWithFaces:any = await Promise.all(
     persons.map(async (person) => {
       const { data: faces } = await client.models.Faces.list({
         filter: {
@@ -117,7 +93,7 @@ export function FaceManagementPage({ userId, eventId }: FaceManagementPageProps)
       }
 
       setPersonsData(personsWithFaces);
-      setNextToken(newNextToken);
+      setNextToken(newNextToken || null);
       setIsLoading(false);
     } catch (error) {
       console.error('Error fetching persons :', error);
@@ -284,7 +260,13 @@ export function FaceManagementPage({ userId, eventId }: FaceManagementPageProps)
       <EditPersonDialog
         open={isEditDialogOpen}
         onOpenChange={setIsEditDialogOpen}
-        person={selectedPerson}
+        person={selectedPerson ? {
+          personId: selectedPerson.personId || '',
+          personName: selectedPerson.personName || '',
+          email: selectedPerson.email || '',
+          phoneNumber: selectedPerson.phoneNumber || '',
+          thumbnail: selectedPerson.thumbnail || ''
+        } : null}
       />
     </div>
   );

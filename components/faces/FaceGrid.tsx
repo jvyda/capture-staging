@@ -29,9 +29,13 @@ interface FaceGridProps {
   isLoading: boolean;
   onFaceDeleted?: () => void;
   eventId: string;
+  confidenceThreshold: number;
+  onFaceTransfer?: (faceId: string, targetPersonId: string) => void;
+  onSetPrimary?: (faceId: string) => void;
+  onRemoveFace?: (faceId: string) => void;
 }
 
-export function FaceGrid({ selectedPerson, isLoading, onFaceDeleted, eventId }: FaceGridProps) {
+export function FaceGrid({ selectedPerson, isLoading, onFaceDeleted, eventId, confidenceThreshold, onFaceTransfer, onSetPrimary, onRemoveFace }: FaceGridProps) {
   const handleDeleteFace = async (face: FaceType) => {
     if (!face.awsFaceId) {
       console.error('Cannot delete face: awsFaceId is missing');
@@ -93,22 +97,20 @@ export function FaceGrid({ selectedPerson, isLoading, onFaceDeleted, eventId }: 
       // Step 3: Delete the face from Faces table
       await client.models.Faces.delete({
         faceId: face.faceId,
-        personId: face.personId
       });
 
       // Step 4: Check if person has any remaining faces
       const { data: remainingFaces } = await client.models.Faces.list({
         filter: {
-          personId: { eq: face.personId },
+          personId: { eq: face.personId || undefined},
           isArchived: { eq: false }
         }
       });
 
       // If no faces remain, delete the person
-      if (remainingFaces.length === 0) {
+      if (remainingFaces.length === 0 && face.personId) {
         await client.models.Persons.delete({
           personId: face.personId,
-          eventId: eventId
         });
       }
 

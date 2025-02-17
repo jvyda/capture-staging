@@ -49,16 +49,8 @@ export function PersonList({
 }: PersonListProps) {
   const [dragOverId, setDragOverId] = useState<string | null>(null);
   
-  const filteredPersons = persons.filter(person =>
-    person.personName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    person.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    person.phoneNumber.toLowerCase().includes(searchQuery.toLowerCase())
-  );
 
   // const totalPages = Math.ceil(filteredPersons.length / peoplePerPage);
-  const startIndex = (currentPage - 1) * peoplePerPage;
-  const paginatedPersons = filteredPersons.slice(startIndex, startIndex + peoplePerPage);
-console.log(paginatedPersons)
   const handleDragOver = (e: React.DragEvent, personId: string) => {
     e.preventDefault();
     e.stopPropagation();
@@ -109,7 +101,7 @@ console.log(paginatedPersons)
                 <div className="relative w-12 h-12 rounded-full overflow-hidden">
                   <Image
                     src={`https://${process.env.NEXT_PUBLIC_FACE_DETECTION_THUMBNAILS_CDN_DOMAIN}/${person.thumbnail}`||''}
-                    alt={person.personName}
+                    alt={person.personName|| 'image name'}
                     fill
                     className="object-cover"
                   />
@@ -150,7 +142,7 @@ console.log(paginatedPersons)
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+              onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
               disabled={currentPage === 1}
               className="text-theme-primary hover:bg-theme-highlight-alpha/20"
             >
@@ -163,7 +155,7 @@ console.log(paginatedPersons)
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+              onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
               disabled={currentPage === totalPages}
               className="text-theme-primary hover:bg-theme-highlight-alpha/20"
             >

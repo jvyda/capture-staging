@@ -43,12 +43,22 @@ import {
   Layers,
 } from "lucide-react";
 import {toast} from 'sonner'
-
+interface Selection {
+    width: number;
+    height: number;
+    x: number;
+    y: number;
+  }
 const client = generateClient<Schema>();
 type TagDialogState = {
     selection: Selection;
     position: { x: number; y: number };
   } | null;
+  type Photo = Schema['Photos']['type'];
+  type Face = Schema['Faces']['type'];
+  type PhotoWithFaces = Photo & {
+    faces: Array<Face>;
+  };
 export default function PhotoPage() {
   const params = useParams();
   const router = useRouter();
@@ -66,12 +76,11 @@ export default function PhotoPage() {
     phone: "",
     notes: "",
   });
-  type PhotoType = Schema["Photos"]["type"];
   const [isLoading, setIsLoading] = useState(false);
 
   const eventId = params?.eventId as string;
   const photoId = params?.photoId as string;
-  const [photo, setPhoto] = useState<PhotoType | null>(null);
+  const [photo, setPhoto] = useState<PhotoWithFaces | null>(null);
   const [isTagging, setIsTagging] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
 
@@ -85,7 +94,7 @@ export default function PhotoPage() {
       ]);
   
       const photo = photoResponse.data;
-      const faces = facesResponse.data;
+      const faces:any = facesResponse.data;
   
       if (!photo || !faces) {
         console.error('Photo or faces not found');
@@ -200,75 +209,10 @@ export default function PhotoPage() {
   }, [isDragging, currentSelection]);
 
   const handleSaveTag = async () => {
-    if (!tagDialog || !selectedPerson) return;
-
-    try {
-      setIsLoading(true);
-      
-      // Add API call here to save the tag
-      const response = await fetch(`/api/events/${params.eventId}/photos/${photo.photoId}/tags`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          personId: selectedPerson,
-          x: tagDialog.selection.x,
-          y: tagDialog.selection.y,
-          width: tagDialog.selection.width,
-          height: tagDialog.selection.height,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to add tag');
-      }
-
-      // Refresh photo data
-      const updatedPhoto = await response.json();
-      setPhoto(updatedPhoto);
-      toast.success("Person tagged successfully");
-      setTagDialog(null);
-      setSelectedPerson("");
-      setNewPersonData({ name: "", phone: "", notes: "" });
-    } catch (error) {
-      console.error('Error adding tag:', error);
-      toast.error("Failed to tag person");
-    } finally {
-      setIsLoading(false);
-    }
+   console.log('tag save');
   };
 
-  const handleUpdatePhoto = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
 
-    try {
-      const response = await fetch(`/api/events/${params.eventId}/photos/${photo.photoId}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          metadata: photo.metadata,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update photo');
-      }
-
-      const updatedPhoto = await response.json();
-      setPhoto(updatedPhoto);
-      toast.success("Photo details updated successfully");
-      setIsEditing(false);
-    } catch (error) {
-      console.error('Error updating photo:', error);
-      toast.error("Failed to update photo details");
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   return (
     <div className="max-w mx-auto space-y-6">

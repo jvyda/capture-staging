@@ -8,9 +8,12 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar, Search, SlidersHorizontal } from "lucide-react";
 import SimpleBar from 'simplebar-react';
-import { PhotoCard } from "@/components/photos/PhotoCard";
+import { PhotoCard } from "@/components/people/PhotoCard";
 import { VideoCard } from "@/components/videos/VideoCard";
+import type { Schema } from '@/amplify/data/resource';
 
+type VideoCardProps = Schema['Videos']['type'];
+type PhotoCardProps = Schema['Photos']['type'];
 interface PersonMediaGridProps {
   personId: string;
 }
@@ -20,41 +23,54 @@ export function PersonMediaGrid({ personId }: PersonMediaGridProps) {
   const [showFilters, setShowFilters] = useState(false);
   const [mediaType, setMediaType] = useState("all");
   const [timeRange, setTimeRange] = useState("all");
-
+  const [photos, setPhotos] = useState<PhotoCardProps[]>([]);
+  const [videos, setVideos] = useState<VideoCardProps[]>([]);
   // Mock data - replace with API calls
-  const photos = [
-    {
-      id: "1",
-      url: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=800&q=80",
-      title: "Company Event",
-      peopleTagged: 3,
-      status: "processed" as const,
-    },
-    {
-      id: "2",
-      url: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&q=80",
-      title: "Team Meeting",
-      peopleTagged: 5,
-      status: "processed" as const,
-    },
-  ];
+  // const photos = [
+  //   {
+  //     photoId: "1",
+  //     s3Key: "events/company-event.jpg",
+  //     fileName: "Company Event",
+  //     peopleTagged: 3,
+  //     recognitionStatus: "processed" as const,
+  //     thumbnail: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=800&q=80",
+  //     eventId: 'someeventid'
+  //   },
+  //   {
+  //     photoId: "2",
+  //     s3Key: "events/team-meeting.jpg",
+  //     fileName: "Team Meeting",
+  //     peopleTagged: 5,
+  //     recognitionStatus: "processed" as const,
+  //     thumbnail: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&q=80",
+  //     eventId: 'someeventid'
+  //   },
+  // ];
 
-  const videos = [
-    {
-      id: "1",
-      title: "Product Launch",
-      thumbnail: "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=800&q=80",
-      duration: "2:45",
-      uploadDate: "2 hours ago",
-      favorite: true,
-      starred: false,
-      status: "ready" as const,
-      faceExtractionStatus: {
-        status: "complete" as const,
-        faceCount: 3,
-      },
-    },
-  ];
+  // const videos = [
+  //   {
+  //     videoId: "1",
+  //     chunksCount: 5,
+  //     duration: 165,
+  //     eventId: personId,
+  //     fileName: "Product Launch",
+  //     filePath: "/videos/product-launch",
+  //     fileSize: 1024000,
+  //     hasChunks: true,
+  //     isArchived: false,
+  //     recognitionCollectionId: "collection1",
+  //     recognitionStatus: "processed",
+  //     s3Bucket: "my-video-bucket",
+  //     s3Key: "videos/product-launch.mp4",
+  //     taggedFaces: JSON.stringify([]),
+  //     taggedPeople: JSON.stringify([]),
+  //     taggedPeopleCount: 3,
+  //     thumbnail: "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=800&q=80",
+  //     userId: "user1",
+  //     videoName: "Product Launch",
+  //     videoStatus: "ready"
+  //   },
+  // ];
 
   return (
     <div className="p-6 space-y-6">
@@ -107,10 +123,10 @@ export function PersonMediaGrid({ personId }: PersonMediaGridProps) {
           <TabsContent value="all" className="m-0">
             <div className="grid grid-cols-4 gap-6">
               {photos.map((photo) => (
-                <PhotoCard key={photo.id} {...photo} />
+                <PhotoCard key={photo.photoId} {...photo} isSelected={false} />
               ))}
               {videos.map((video) => (
-                <VideoCard key={video.id} {...video} />
+                <VideoCard key={video.videoId} {...video} isSelected={false} />
               ))}
             </div>
           </TabsContent>
@@ -118,7 +134,7 @@ export function PersonMediaGrid({ personId }: PersonMediaGridProps) {
           <TabsContent value="photos" className="m-0">
             <div className="grid grid-cols-4 gap-6">
               {photos.map((photo) => (
-                <PhotoCard key={photo.id} {...photo} />
+                <PhotoCard key={photo.photoId} {...photo} isSelected={false}/>
               ))}
             </div>
           </TabsContent>
@@ -126,7 +142,7 @@ export function PersonMediaGrid({ personId }: PersonMediaGridProps) {
           <TabsContent value="videos" className="m-0">
             <div className="grid grid-cols-4 gap-6">
               {videos.map((video) => (
-                <VideoCard key={video.id} {...video} />
+                <VideoCard key={video.videoId} {...video} isSelected={false}/>
               ))}
             </div>
           </TabsContent>

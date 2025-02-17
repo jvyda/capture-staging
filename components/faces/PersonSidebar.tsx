@@ -6,7 +6,23 @@ import SimpleBar from 'simplebar-react';
 import Image from "next/image";
 import { Clock } from "lucide-react";
 
-// ... rest of the imports and interfaces
+interface Person {
+  personId: string;
+  name: string;
+  thumbnail: string;
+  appearances: {
+    startTime: number;
+    endTime: number;
+  }[];
+  totalScreenTime: number;
+}
+
+interface PersonSidebarProps {
+  people: Person[];
+  selectedPerson: Person | null;
+  onPersonClick: (person: Person) => void;
+  currentTime: number;
+}
 
 export function PersonSidebar({ people, selectedPerson, onPersonClick, currentTime }: PersonSidebarProps) {
   // ... existing functions

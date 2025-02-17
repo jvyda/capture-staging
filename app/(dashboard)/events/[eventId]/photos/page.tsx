@@ -130,7 +130,9 @@ export default function Photos() {
         
         const { data: photos, nextToken: newNextToken } = await client.models.Photos.list({
           filter: {
+            
             eventId: { eq: eventId },
+            userId: { eq: userId ||undefined },
             isArchived: { eq: false }
           },
           limit: photosPerPage,
@@ -144,7 +146,7 @@ export default function Photos() {
         }
 
         setPhotos(photos);
-        setNextToken(newNextToken);
+        setNextToken(newNextToken || null);
         setIsLoading(false);
       } catch (error) {
         console.error('Error fetching photos:', error);
@@ -153,7 +155,7 @@ export default function Photos() {
     };
 
     fetchPhotos();
-  }, [eventId, currentPage]);
+  }, [eventId, userId, currentPage]);
 
   // Real-time updates subscription
   useEffect(() => {
@@ -163,11 +165,10 @@ export default function Photos() {
   
     const sub = client.models.Photos.observeQuery({
       filter: {
+        userId: { eq: userId || undefined },
         eventId: { eq: eventId },
         isArchived: { eq: false }
-      },
-      limit: photosPerPage,
-      nextToken,
+      }
     })
     .subscribe({
       next: ({ items, isSynced }) => {
@@ -226,7 +227,7 @@ export default function Photos() {
       isSubscribed = false;
       sub.unsubscribe();
     };
-  }, [eventId]);
+  }, [eventId, userId]);
 
   // Pagination controls
   const totalPages = Math.ceil(totalPhotos / photosPerPage);
@@ -708,7 +709,7 @@ const [isProcessing, setIsProcessing] = useState(false);
                   s3Key={photo.s3Key || ''}
                   thumbnail={`https://${process.env.NEXT_PUBLIC_PHOTOS_CDN_DOMAIN}/${photo.thumbnail}`||''}
                   fileName={photo.fileName || ''}
-                  peopleTagged={photo.taggedPeopleCount || 0}
+                  taggedPeopleCount={photo.taggedPeopleCount || 0}
                   recognitionStatus={(photo.recognitionStatus as 'uploaded' | 'processing' | 'processed' | 'failed') || 'processing'}
                   isSelected={selectedPhotos.has(photo.photoId)}
                   eventId={eventId}

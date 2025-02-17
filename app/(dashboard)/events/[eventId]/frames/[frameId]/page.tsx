@@ -45,10 +45,21 @@ import {
 import {toast} from 'sonner'
 
 const client = generateClient<Schema>();
+interface Selection {
+  width: number;
+  height: number;
+  x: number;
+  y: number;
+}
 type TagDialogState = {
     selection: Selection;
     position: { x: number; y: number };
   } | null;
+  type Frame = Schema['Frames']['type'];
+  type Face = Schema['Faces']['type'];
+  type FrameWithFaces = Frame & {
+    faces: Array<Face>;
+  };
 export default function PhotoPage() {
   const params = useParams();
   const router = useRouter();
@@ -66,12 +77,11 @@ export default function PhotoPage() {
     phone: "",
     notes: "",
   });
-  type FrameType = Schema["Frames"]["type"];
   const [isLoading, setIsLoading] = useState(false);
 
   const eventId = params?.eventId as string;
   const frameId = params?.frameId as string;
-  const [frame, setFrame] = useState<FrameType | null>(null);
+  const [frame, setFrame] = useState<FrameWithFaces | null>(null);
   const [isTagging, setIsTagging] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
 
@@ -79,13 +89,15 @@ export default function PhotoPage() {
   const [userId, setUserId] = useState<string | null>(null);
   async function getPhotoWithFaces(frameId: string) {
     try {
-      const [photoResponse, facesResponse] = await Promise.all([
+      const [frameResponse, facesResponse] = await Promise.all([
         client.models.Frames.get({ frameId }),
-        client.models.Faces.list({ filter: { frameId: { eq: frameId } } }),
+        client.models.Faces.list({ 
+          filter: { frameId: { eq: frameId } } 
+        }),
       ]);
   
-      const frame = photoResponse.data;
-      const faces = facesResponse.data;
+      const frame = frameResponse.data;
+      const faces:any = facesResponse.data;
   
       if (!frame || !faces) {
         console.error('Photo or faces not found');
@@ -186,43 +198,7 @@ export default function PhotoPage() {
   }, [isDragging, currentSelection]);
 
   const handleSaveTag = async () => {
-    if (!tagDialog || !selectedPerson) return;
-
-    try {
-      setIsLoading(true);
-      
-      // Add API call here to save the tag
-      const response = await fetch(`/api/events/${params.eventId}/frames/${frame.frameId}/tags`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          personId: selectedPerson,
-          x: tagDialog.selection.x,
-          y: tagDialog.selection.y,
-          width: tagDialog.selection.width,
-          height: tagDialog.selection.height,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to add tag');
-      }
-
-      // Refresh frame data
-      const updatedFrame = await response.json();
-      setFrame(updatedFrame);
-      toast.success("Person tagged successfully");
-      setTagDialog(null);
-      setSelectedPerson("");
-      setNewPersonData({ name: "", phone: "", notes: "" });
-    } catch (error) {
-      console.error('Error adding tag:', error);
-      toast.error("Failed to tag person");
-    } finally {
-      setIsLoading(false);
-    }
+    console.log("Saving tag");
   };
 
  

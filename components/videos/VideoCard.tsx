@@ -6,7 +6,14 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import type { Schema } from '@/amplify/data/resource';
-type VideoCardProps = Schema['Videos']['type'];
+// type VideoCardProps = Schema['Videos']['type'];
+type PhotoCardProps = Schema['Photos']['type'];
+
+type VideoType = Schema['Videos']['type'];
+interface VideoCardProps extends VideoType {
+  isSelected?: boolean;
+  onSelect?: (e: React.MouseEvent) => void;
+}
 
 
 export function VideoCard({
@@ -17,7 +24,8 @@ export function VideoCard({
   duration,
   taggedPeople,
   recognitionStatus,
-  chunksCount
+  chunksCount,
+  isSelected,
 }: VideoCardProps) {
   const router = useRouter();
 

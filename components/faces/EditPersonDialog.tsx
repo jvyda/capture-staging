@@ -12,18 +12,18 @@ interface EditPersonDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   person: {
-    id: string;
-    name: string;
-    email: string;
-    phone: string;
-    avatar: string;
+    personId: string;
+  personName: string;  // Now guaranteed to be non-null
+  email: string;       // Now guaranteed to be non-null
+  phoneNumber: string; // Now guaranteed to be non-null
+  thumbnail: string; 
   } | null;
 }
 
 export function EditPersonDialog({ open, onOpenChange, person }: EditPersonDialogProps) {
-  const [name, setName] = useState(person?.name || "");
+  const [name, setName] = useState(person?.personName || "");
   const [email, setEmail] = useState(person?.email || "");
-  const [phone, setPhone] = useState(person?.phone || "");
+  const [phone, setPhone] = useState(person?.phoneNumber || "");
   const [isSaving, setIsSaving] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {

@@ -13,7 +13,16 @@ import { generateClient } from 'aws-amplify/data';
 import type { Schema } from '@/amplify/data/resource';
 import { useParams } from "next/navigation";
 const client = generateClient<Schema>();
+type Person = Schema['Persons']['type'];
+type Face = Schema['Faces']['type'];
+type PersonsWithFaces = Person & {
+  faces: Array<Face>;
+};
 
+
+type PersonType = Schema['Persons']['type'] & {
+  faces?: Schema['Faces']['type'][];
+};
 export default function People() {
   const params = useParams();
   const isFirstMount = useRef(true);
@@ -44,15 +53,13 @@ export default function People() {
   const [isLoading, setIsLoading] = useState(false);
   const peoplePerPage = 12;
   const pageTokensCache = useRef(new Map());
-  const [persons, setPersons] = useState<PersonType[]>([]);
+  const [persons, setPersons] = useState<PersonsWithFaces[]>([]);
   const [nextToken, setNextToken] = useState<string | null>(null);
 
 
   
 
-  type PersonType = Schema['Persons']['type'] & {
-    faces?: Schema['Faces']['type'][];
-  };
+ 
     // Fetch {Persons} for current page
     useEffect(() => {
       if (!eventId) return;
@@ -69,14 +76,10 @@ export default function People() {
               isArchived: { eq: false }
             },
             limit: peoplePerPage,
-            nextToken: cachedToken || null,
-            sort: {
-              field: 'updatedAt',
-              direction: 'desc'
-            }
+            nextToken: cachedToken || null
           });
           // Then, for each person, get their faces
-      const personsWithFaces = await Promise.all(
+      const personsWithFaces: any = await Promise.all(
         persons.map(async (person) => {
           const { data: faces } = await client.models.Faces.list({
             filter: {
@@ -84,7 +87,7 @@ export default function People() {
               isArchived: { eq: false }
             }
           });
-          return { ...person, faces };
+          return { ...person, faces:faces || [] };
         })
       );
           
@@ -94,7 +97,7 @@ export default function People() {
           }
   
           setPersons(personsWithFaces);
-          setNextToken(newNextToken);
+          setNextToken(newNextToken || null);
           setIsLoading(false);
         } catch (error) {
           console.error('Error fetching persons :', error);

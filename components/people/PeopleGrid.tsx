@@ -46,14 +46,10 @@ export function PeopleGrid({ filter, search, userId, eventId }: PeopleGridProps)
             isArchived: { eq: false }
           },
           limit: peoplePerPage,
-          nextToken: cachedToken || null,
-          sort: {
-            field: 'updatedAt',
-            direction: 'desc'
-          }
+          nextToken: cachedToken || null
         });
         // Then, for each person, get their faces
-    const personsWithFaces = await Promise.all(
+    const personsWithFaces:any = await Promise.all(
       persons.map(async (person) => {
         const { data: faces } = await client.models.Faces.list({
           filter: {
@@ -72,7 +68,7 @@ export function PeopleGrid({ filter, search, userId, eventId }: PeopleGridProps)
 
         setPersons(personsWithFaces);
         console.log(personsWithFaces)
-        setNextToken(newNextToken);
+        setNextToken(newNextToken||null);
         setIsLoading(false);
       } catch (error) {
         console.error('Error fetching persons :', error);
@@ -83,33 +79,7 @@ export function PeopleGrid({ filter, search, userId, eventId }: PeopleGridProps)
     fetchPersons();
   }, [eventId, currentPage]);
 
-  // const filteredPeople = persons.filter(person => {
-  //   if (search) {
-  //     const searchLower = search.toLowerCase();
-  //     return (
-  //       person.name.toLowerCase().includes(searchLower) ||
-  //       person.email.toLowerCase().includes(searchLower) ||
-  //       person.phone.includes(search)
-  //     );
-  //   }
-    
-  //   switch (filter) {
-  //     case "in-photos":
-  //       return person.photosTotal > 0;
-  //     case "in-videos":
-  //       return person.totalVideos > 0;
-  //     case "recent":
-  //       return true; // In a real app, you'd filter by creation date
-  //     case "alphabetical":
-  //       return true; // Sorting handled below
-  //     default:
-  //       return true;
-  //   }
-  // });
-
-  // if (filter === "alphabetical") {
-  //   filteredPeople.sort((a, b) => a.name.localeCompare(b.name));
-  // }
+  
 
   useEffect(() => {
     setCurrentPage(1);
