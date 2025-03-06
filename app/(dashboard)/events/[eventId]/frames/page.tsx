@@ -383,11 +383,13 @@ export default function Frames() {
       </AnimatePresence>
 
       {totalPages > 1 && (
+        <div className="max-w mx-auto fixed bottom-3 right-5 bg-background p-1 rounded-full">
         <Pagination
           currentPage={currentPage}
           totalPages={totalPages}
           onPageChange={setCurrentPage}
         />
+        </div>
       )}
 
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>

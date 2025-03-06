@@ -76,8 +76,13 @@ export async function POST(request: Request) {
     }
 
   try {
-    // Retrieve all frames from the table with filters
-    const { data: frames } = await client.models.Frames.list({
+    let allFrames: any[] = [];
+    let nextToken: string | undefined;
+    let pageCount = 0;
+    // Fetch all frames using pagination with optimal batch size
+    do {
+      console.log(`Fetching page ${pageCount + 1} of photos...`);
+    const { data: frames, nextToken: newNextToken } = await client.models.Frames.list({
       filter: {
         and: [
           { userId: { eq: userId } },
@@ -86,19 +91,30 @@ export async function POST(request: Request) {
           { recognitionStatus: { ne: 'processed' } },
           {excludeFromFaceDetection: { eq: false }}
         ]
-      }
+      },
+      limit: 100, // Optimal batch size for performance and reliability
+      nextToken: nextToken
     });
 
-    if (!frames || frames.length === 0) {
+    if (frames && frames.length > 0) {
+      allFrames = allFrames.concat(frames);
+      console.log(`Retrieved ${frames.length} photos in current batch. Total photos: ${allFrames.length}`);
+    }
+    nextToken = newNextToken||undefined;
+      pageCount++;
+    } while (nextToken);
+
+    if (allFrames.length === 0) {
       return NextResponse.json({
         success: true,
         messagesSent: 0,
         message: "No frames found to process"
       });
     }
+    console.log(`Total frames to process: ${allFrames.length} (retrieved in ${pageCount} pages)`);
 
     // Prepare message bodies for each frame
-    const messages = frames.map(frame => ({
+    const messages = allFrames.map(frame => ({
       bucketName: bucketName,
       s3Key: frame.s3Key,
       userId: userId,
@@ -123,7 +139,7 @@ export async function POST(request: Request) {
       success: true,
       messagesSent,
       message: `Successfully queued ${messagesSent} frames for face detection`,
-      totalFrames: frames.length
+      totalFrames: allFrames.length
     });
 
   } catch (error) {

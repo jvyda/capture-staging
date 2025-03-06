@@ -86,9 +86,10 @@ export async function POST(request: Request) {
           and: [
             { userId: { eq: userId } },
             { eventId: { eq: eventId } },
-            { isArchived: { eq: false } },
-            { recognitionStatus: { ne: 'processed' } },
-            { excludeFromFaceDetection: { eq: false }}
+            // { isArchived: { eq: true } },
+            // {excludeFromFaceDetection: {eq: true}},
+            // { recognitionStatus: { ne: 'processed' } },
+            // { excludeFromFaceDetection: { eq: false }}
           ]
         },
         limit: 100, // Optimal batch size for performance and reliability

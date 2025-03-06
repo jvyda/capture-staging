@@ -119,3 +119,7 @@ input:is(:-webkit-autofill, :autofill) {
 .grid-cols-12 {
   grid-template-columns: repeat(12, minmax(0, 1fr));
 }
+.simplebar-hide-scrollbar .simplebar-placeholder{
+
+  display: none;
+}

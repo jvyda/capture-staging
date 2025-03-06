@@ -7,6 +7,7 @@ import { Pagination } from "@/components/shared/Pagination";
 import { FilterBar } from "@/components/photos/FilterBar";
 import { toast } from "sonner";
 
+
 import { Info, Check, Ban } from "lucide-react";
 import {
   AlertDialog,
@@ -26,6 +27,7 @@ import type { Schema } from "@/amplify/data/resource";
 
 const client = generateClient<Schema>();
 
+
 // AWS S3 Client configuration
 const s3Client = new S3Client({
   region: process.env.NEXT_PUBLIC_AWS_REGION!,
@@ -42,12 +44,18 @@ const SUPPORTED_FORMATS = ["image/jpeg", "image/png", "image/webp"];
 
 type Photo = Schema["Photos"]["type"];
 export default function Photos() {
+  
+  
   const params = useParams();
   const isFirstMount = useRef(true);
   const isFirstMountUserId = useRef(true);
   const [autoDetectEnabled, setAutoDetectEnabled] = useState(false);
   const eventId = params?.eventId as string;
   const [userId, setUserId] = useState<string | null>(null);
+  
+
+
+
   const [rekognitionCollectionId, setRekognitionCollectionId] = useState<
     string | null
   >(null);
@@ -841,13 +849,17 @@ export default function Photos() {
         </AnimatePresence>
 
         {totalPages > 1 && (
+          <>
           <div className="max-w mx-auto fixed bottom-3 right-5 bg-background p-1 rounded-full">
+
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}
             onPageChange={setCurrentPage}
           />
           </div>
+          
+          </>
         )}
 
         <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>

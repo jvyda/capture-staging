@@ -43,7 +43,7 @@ export function FaceManagementPage({ userId, eventId }: FaceManagementPageProps)
   // const [facesData, setFacesData] = useState<FaceType[]>(faces);
   const pageTokensCache = useRef(new Map());
   const [currentPage, setCurrentPage] = useState(1);
-  const [peoplePerPage, setPeoplePerPage] = useState(5);
+  const [peoplePerPage, setPeoplePerPage] = useState(15);
   const [nextToken, setNextToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [totalPages, setTotalPages] = useState(0);
@@ -170,7 +170,7 @@ export function FaceManagementPage({ userId, eventId }: FaceManagementPageProps)
   };
 
   return (
-    <div className="max-w-7xl mx-auto p-4 lg:p-6">
+    <div className="max-w mx-auto p-4 lg:p-6">
       <div className="flex flex-col gap-6">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold text-theme-primary">Face Management</h1>
@@ -226,8 +226,8 @@ export function FaceManagementPage({ userId, eventId }: FaceManagementPageProps)
 
         {/* Only render the grid section after loading is complete */}
         {/* {!isLoading && ( */}
-          <div className="grid grid-cols-4 gap-6">
-            <div className="col-span-1">
+          <div className="grid grid-cols-6 gap-6">
+            <div className="col-span-2">
               <PersonList
                 persons={personsData}
                 selectedPerson={selectedPerson}
@@ -241,7 +241,7 @@ export function FaceManagementPage({ userId, eventId }: FaceManagementPageProps)
                 totalPages={totalPages}
               />
             </div>
-            <div className="col-span-3">
+            <div className="col-span-4">
               <FaceGrid
                 selectedPerson={selectedPerson}
                 isLoading={isLoading}

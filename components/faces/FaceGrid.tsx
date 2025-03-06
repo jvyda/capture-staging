@@ -124,7 +124,7 @@ export function FaceGrid({ selectedPerson, isLoading, onFaceDeleted, eventId, co
   };
 
   return (
-    <Card className="flex-1 bg-background backdrop-blur-sm border-theme-accent-alpha/20">
+    <Card className="h-[calc(100vh-16rem)] flex-1 bg-background backdrop-blur-sm border-theme-accent-alpha/20">
       <SimpleBar className="h-[calc(100vh-12rem)]">
         <div className="p-4">
           <div className="grid grid-cols-6 gap-4">

@@ -73,8 +73,9 @@ export function PersonList({
 
   return (
     <Card className="h-[calc(100vh-16rem)] flex flex-col bg-background backdrop-blur-sm border-theme-accent-alpha/20">
-      <SimpleBar className="flex-1 overflow-y-auto h-full">
-        <div className="p-4 space-y-2">
+      <SimpleBar className="simplebar-hide-scrollbar h-[calc(100vh-12rem)] flex-1 overflow-y-auto">
+        <div>
+        <div className="p-4 space-y-2 grid grid-cols-3">
           {persons.map((person) => {
             const isActive = selectedPerson?.personId === person.personId;
 
@@ -82,12 +83,12 @@ export function PersonList({
               <motion.div
                 key={person.personId}
                 className={`
-                  w-full p-3 rounded-lg transition-colors flex items-center gap-3 group
+                  w-full p-3 rounded-lg transition-colors flex items-center gap-3 group flex-col
                   ${isActive 
-                    ? "bg-theme-primary text-white" 
+                    ? "bg-black/50 text-white" 
                     : dragOverId === person.personId
-                      ? "bg-theme-highlight-alpha/20"
-                      : "hover:bg-theme-highlight-alpha/10"
+                      ? "bg-black/74"
+                      : "hover:bg-black/20"
                   }
                 `}
                 onClick={() => onPersonSelect(person)}
@@ -108,7 +109,7 @@ export function PersonList({
                 </div>
                 <div className="flex-1 text-left">
                   <h3 className={`text-xs font-medium ${isActive ? "text-white" : "text-theme-primary"}`}>
-                    {person.personName}
+                    {person.personName}{person.personId}
                   </h3>
                   <p className={`text-xs ${isActive ? "text-white/80" : "text-theme-secondary"}`}>
                     {person.faces.length} faces
@@ -128,11 +129,11 @@ export function PersonList({
                   }}
                 >
                   <Edit2 className="w-4 h-4" />
-                  {totalPages}
                 </Button>
               </motion.div>
             );
           })}
+        </div>
         </div>
       </SimpleBar>
 

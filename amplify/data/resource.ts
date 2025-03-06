@@ -83,6 +83,9 @@ const schema = a.schema({
       userId: a.string(),
       videoName: a.string(),
       videoStatus: a.string(),
+      jobId:a.string(),
+      videoJobStatus: a.enum(['PENDING', 'PROCESSING', 'COMPLETED', 'FAILED']),
+      videoJobResult: a.json(),
       videoChunks: a.hasMany('VideoChunks', 'videoId'),
       people: a.hasMany('Persons', 'videoId') // Links to the 'videoId' field in VideoChunks
     })
@@ -91,7 +94,7 @@ const schema = a.schema({
 
   VideoChunks: a
     .model({
-      chunkId: a.id(), //  mark as partition key
+      chunkId: a.string().required(), //  mark as partition key
       userId: a.string(),
       eventId: a.string(),
       fileName:a.string(),
@@ -111,8 +114,12 @@ const schema = a.schema({
       thumbnail:a.string(),
       recognitionStatus:a.string(),
       recognitionCollectionId:a.string(),
+      jobId:a.string(),
+      videoJobStatus: a.enum(['PENDING', 'PROCESSING', 'COMPLETED', 'FAILED']),
+      videoJobResult: a.json(),
       videoChunk: a.belongsTo('Videos', 'videoId')
     })
+    .identifier(['chunkId'])
     .authorization((allow) => [allow.publicApiKey()]),
   Frames: a
     .model({
@@ -246,6 +253,8 @@ const schema = a.schema({
     })
     .identifier(['personId'])
     .authorization((allow) => [allow.publicApiKey()]),
+    
+    
 });
 
 export type Schema = ClientSchema<typeof schema>;
