@@ -1,7 +1,7 @@
 "use client";
 
 import { Card } from "@/components/ui/card";
-import { Heart, Star, Clock, MapPin, Users, Layers, AlertCircle, Loader2, Play, CheckCircle, Edit2 } from "lucide-react";
+import { Heart, Star, Clock, MapPin, Users, Layers, AlertCircle, Loader2, Play, CheckCircle, Edit2, Check } from "lucide-react";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
@@ -12,7 +12,7 @@ type PhotoCardProps = Schema['Photos']['type'];
 type VideoType = Schema['Videos']['type'];
 interface VideoCardProps extends VideoType {
   isSelected?: boolean;
-  onSelect?: (e: React.MouseEvent) => void;
+  onSelect?: (id: string, e: React.MouseEvent) => void;
 }
 
 
@@ -26,6 +26,7 @@ export function VideoCard({
   recognitionStatus,
   chunksCount,
   isSelected,
+  onSelect,
 }: VideoCardProps) {
   const router = useRouter();
 
@@ -102,20 +103,38 @@ export function VideoCard({
     router.push(`/events/${eventId}/videos/${videoId}`);
   };
 
+  const handleCardClick = (e: React.MouseEvent) => {
+    if (onSelect) {
+      onSelect(videoId, e);
+    } else {
+      router.push(`/events/${eventId}/videos/${videoId}`);
+    }
+  };
+
   return (
-    <motion.div whileHover={{ scale: 1.02 }} transition={{ duration: 0.2 }}>
-      <Card className="overflow-hidden group cursor-pointer hover:shadow-lg transition-shadow bg-background backdrop-blur-sm border-theme-accent-alpha/20 border-0">
+    <motion.div 
+      whileHover={{ scale: 1.02 }} 
+      transition={{ duration: 0.2 }}
+      onClick={handleCardClick}
+    >
+      <Card className={`overflow-hidden group cursor-pointer hover:shadow-lg transition-shadow bg-background backdrop-blur-sm ${isSelected ? "ring-2 ring-theme-primary" : "border-theme-accent-alpha/20 border-0"}`}>
         <div className="relative aspect-square">
           <Image
-          
             src={`https://${process.env.NEXT_PUBLIC_VIDEOS_CDN_DOMAIN}/${thumbnail}`||'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=800&q=80'}
             alt={fileName || 'Video thumbnail'}
             fill
             priority
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-            className="object-cover group-hover:scale-105 transition-transform duration-300"
+            className={`object-cover group-hover:scale-105 transition-transform duration-300 ${isSelected ? "opacity-80" : ""}`}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+          
+          {/* Selection Indicator */}
+          {isSelected && (
+            <div className="absolute top-2 right-2 z-10 bg-theme-primary rounded-full p-1">
+              <Check className="w-4 h-4 text-white" />
+            </div>
+          )}
           
           {/* Play Button Overlay */}
           <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">

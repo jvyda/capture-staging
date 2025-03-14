@@ -123,3 +123,6 @@ input:is(:-webkit-autofill, :autofill) {
 
   display: none;
 }
+.simplebar-placeholder{
+  display: none !important;
+}

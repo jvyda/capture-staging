@@ -179,7 +179,7 @@ export function FramesUploadButton({ isOpen, onOpenChange }: FramesUploadButtonP
                 <ImageIcon className="w-6 h-6 text-theme-primary" />
               </div>
               <Button
-                className="mb-2 bg-theme-primary text-white hover:bg-theme-primary-alpha/90"
+                className="mb-2 bg-primary text-black hover:bg-theme-primary-alpha/90"
                 onClick={() => fileInputRef.current?.click()}
               >
                 Choose Frames

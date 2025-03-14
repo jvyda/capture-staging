@@ -7,7 +7,7 @@ import { RekognitionClient, StartFaceSearchCommand } from '@aws-sdk/client-rekog
 
 const rekognition = new RekognitionClient({ region: process.env.NEXT_PUBLIC_AWS_REGION });
 
-export const handler = async (event: { videoId: string, chunkId?: string }) => {
+export const processVideo  = async (event: { videoId: string, chunkId?: string }) => {
   try {
     const { videoId, chunkId } = event;
 

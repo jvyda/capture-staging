@@ -286,8 +286,9 @@ export default function Frames() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          userId,
           eventId,
+          userId,
+          sourceType: "Frames",
           rekognitionCollectionId: eventId,
           bucketName: process.env.NEXT_PUBLIC_S3_FRAMES_BUCKET_NAME,
         }),

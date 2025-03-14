@@ -10,11 +10,13 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Edit2, Upload, RefreshCcw } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { FramesUploadButton } from "@/components/videos/FramesUploadButton";
+import { FrameUploadButton } from "@/components/videos/FrameUploadButton";
 import { getCurrentUser, fetchUserAttributes } from "aws-amplify/auth";
 import { generateClient } from "aws-amplify/data";
 import { processVideoFunction } from '@/utils/processVideoFunction';
 import type { Schema } from "@/amplify/data/resource";
 const client = generateClient<Schema>();
+
 type VideoType = Schema["Videos"]["type"];
 
 // Define the Person interface to match PersonSidebar requirements
@@ -114,6 +116,7 @@ const [activeJobs, setActiveJobs] = useState(0);
           if (video) {
             const videoChunks = await video.videoChunks();
             setVideo(video);
+            console.log(video)
           }
         } catch (error) {
           console.error("Error fetching event details:", error);
@@ -227,7 +230,7 @@ const [activeJobs, setActiveJobs] = useState(0);
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <h1 className="text-2xl font-bold text-theme-primary">
-            {mockVideoData.title}
+            {video?.fileName || "Video Details"}
           </h1>
         </div>
         <div className="flex items-center gap-2">
@@ -238,6 +241,16 @@ const [activeJobs, setActiveJobs] = useState(0);
             <RefreshCcw className="w-4 h-4 mr-2" />
             Check Video Status
           </Button>
+          
+          
+          
+          {userId && (
+            <FrameUploadButton
+              eventId={eventId}
+              userId={userId}
+              videoId={videoId}
+            />
+          )}
           <Button
             onClick={() => processVideo()}
             className="bg-background hover:bg-black/50 mr-2"
@@ -245,21 +258,14 @@ const [activeJobs, setActiveJobs] = useState(0);
             <RefreshCcw className="w-4 h-4 mr-2" />
             Process Video
           </Button>
-          <Button
-            onClick={() => setIsUploadOpen(!isUploadOpen)}
-            className="bg-background hover:bg-black/50"
-          >
-            <Upload className="w-4 h-4 mr-2" />
-            Upload Frames
-          </Button>
         </div>
       </div>
 
       <div className="mb-6">
-        <FramesUploadButton
+        {/* <FramesUploadButton
           isOpen={isUploadOpen}
           onOpenChange={setIsUploadOpen}
-        />
+        /> */}
       </div>
 
       <div className="grid grid-cols-6 gap-6">

@@ -81,13 +81,13 @@ export async function POST(request: Request) {
     let pageCount = 0;
     // Fetch all frames using pagination with optimal batch size
     do {
-      console.log(`Fetching page ${pageCount + 1} of photos...`);
+      console.log(`Fetching page ${pageCount + 1} of Frames...`);
     const { data: frames, nextToken: newNextToken } = await client.models.Frames.list({
       filter: {
         and: [
           { userId: { eq: userId } },
           { eventId: { eq: eventId } },
-          { isArchived: { eq: false } },
+          { isArchived: { ne: true } },
           { recognitionStatus: { ne: 'processed' } },
           {excludeFromFaceDetection: { eq: false }}
         ]
@@ -98,7 +98,7 @@ export async function POST(request: Request) {
 
     if (frames && frames.length > 0) {
       allFrames = allFrames.concat(frames);
-      console.log(`Retrieved ${frames.length} photos in current batch. Total photos: ${allFrames.length}`);
+      console.log(`Retrieved ${frames.length} Frames in current batch. Total photos: ${allFrames.length}`);
     }
     nextToken = newNextToken||undefined;
       pageCount++;
