@@ -20,10 +20,7 @@ export async function POST(request: Request) {
     // Call the process-video handler
     const result = await processVideo({ videoId, chunkId });
 
-    return NextResponse.json({
-      success: true,
-      ...result
-    });
+    return NextResponse.json(result);
 
   } catch (error) {
     console.error('Error processing video:', error);

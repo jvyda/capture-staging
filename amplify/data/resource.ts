@@ -71,6 +71,8 @@ const schema = a.schema({
       filePath: a.string(),
       fileSize:a.float(),
       hasChunks: a.boolean(),
+      hasFrames: a.boolean(),
+      framesCount: a.integer(),
       isArchived: a.boolean(),
       recognitionCollectionId: a.string(),
       recognitionStatus: a.string(),

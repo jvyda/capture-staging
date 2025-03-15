@@ -18,11 +18,12 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useParams } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft, Loader2 } from "lucide-react";
 
 import { getCurrentUser, fetchUserAttributes } from 'aws-amplify/auth';
 import { generateClient } from 'aws-amplify/data';
 import type { Schema } from '@/amplify/data/resource';
-import { Button } from "@/components/ui/button";
 const client = generateClient<Schema>();
 
 type Frames = Schema['Frames']['type'];
@@ -132,6 +133,15 @@ export default function Frames() {
           const nonArchivedFrames = items.filter(frame => !frame.isArchived);
           const processedFrames = nonArchivedFrames.map(processFramesData);
           setFrames(processedFrames);
+          
+          // Reset to first page when data changes significantly
+          if (currentPage > 1 && processedFrames.length <= (currentPage - 1) * framesPerPage) {
+            setCurrentPage(1);
+          }
+          
+          if (isSynced) {
+            setIsLoading(false);
+          }
         },
         error: (error: any) => {
           const errorDetails = {
@@ -308,6 +318,21 @@ export default function Frames() {
       setIsProcessing(false);
     }
   };
+
+  const handlePageChange = (page: number) => {
+    if (page === currentPage) return;
+    
+    setIsLoading(true);
+    setCurrentPage(page);
+    // Clear selected frames when changing pages
+    setSelectedFrames(new Set());
+    
+    // Add a small delay to show loading state
+    setTimeout(() => {
+      setIsLoading(false);
+    }, 300);
+  };
+
   return (
     <>
     <motion.div
@@ -343,9 +368,11 @@ export default function Frames() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
+            className="flex flex-col items-center justify-center py-12"
           >
-           <div className="absolute top-0 bottom-0 left-0 right-0 h-full w-full flex items-center justify-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-theme-primary"></div>
+            <div className="flex flex-col items-center space-y-4">
+              <Loader2 className="h-10 w-10 animate-spin text-primary" />
+              <p className="text-sm text-muted-foreground">Loading frames...</p>
             </div>
           </motion.div>
         ) : (
@@ -384,12 +411,65 @@ export default function Frames() {
       </AnimatePresence>
 
       {totalPages > 1 && (
-        <div className="max-w mx-auto fixed bottom-3 right-5 bg-background p-1 rounded-full">
-        <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={setCurrentPage}
-        />
+        <div className="max-w mx-auto mt-6 mb-8">
+          <div className="flex items-center justify-between border-t border-border/40 pt-4">
+            <div className="text-sm text-muted-foreground">
+              Showing <span className="font-medium">{startIndex + 1}</span> to{" "}
+              <span className="font-medium">
+                {Math.min(startIndex + framesPerPage, frames.length)}
+              </span>{" "}
+              of <span className="font-medium">{frames.length}</span> frames
+            </div>
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
+                disabled={currentPage === 1 || isLoading}
+                className="h-8 w-8 p-0"
+              >
+                <span className="sr-only">Go to previous page</span>
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                // Show pages around current page
+                let pageToShow;
+                if (totalPages <= 5) {
+                  pageToShow = i + 1;
+                } else if (currentPage <= 3) {
+                  pageToShow = i + 1;
+                } else if (currentPage >= totalPages - 2) {
+                  pageToShow = totalPages - 4 + i;
+                } else {
+                  pageToShow = currentPage - 2 + i;
+                }
+                
+                return (
+                  <Button
+                    key={pageToShow}
+                    variant={currentPage === pageToShow ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => handlePageChange(pageToShow)}
+                    disabled={isLoading}
+                    className="h-8 w-8 p-0"
+                  >
+                    <span className="sr-only">Go to page {pageToShow}</span>
+                    {pageToShow}
+                  </Button>
+                );
+              })}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
+                disabled={currentPage === totalPages || isLoading}
+                className="h-8 w-8 p-0"
+              >
+                <span className="sr-only">Go to next page</span>
+                <ArrowLeft className="h-4 w-4 rotate-180" />
+              </Button>
+            </div>
+          </div>
         </div>
       )}
 

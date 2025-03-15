@@ -33,12 +33,14 @@ interface FrameUploadButtonProps {
   eventId: string;
   userId: string;
   videoId: string;
+  onUploadComplete?: () => void;
 }
 
 export function FrameUploadButton({
   eventId,
   userId,
   videoId,
+  onUploadComplete,
 }: FrameUploadButtonProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadingFiles, setUploadingFiles] = useState<UploadingFile[]>([]);
@@ -134,6 +136,23 @@ export function FrameUploadButton({
       
       await client.models.Frames.create(frameData);
       
+      // Update video record to indicate it has frames
+      try {
+        // First get the current video to get the current framesCount
+        const { data: currentVideo } = await client.models.Videos.get({
+          videoId
+        });
+        
+        // Then update with the new count
+        await client.models.Videos.update({
+          videoId,
+          hasFrames: true,
+          framesCount: (currentVideo?.framesCount || 0) + 1,
+        });
+      } catch (error) {
+        console.error("Failed to update video record:", error);
+      }
+      
       // Update progress and show success
       setUploadingFiles(prev => 
         prev.map(f => f.id === fileId ? { ...f, progress: 100, status: "complete" } : f)
@@ -145,6 +164,9 @@ export function FrameUploadButton({
       setTimeout(() => {
         setUploadingFiles(prev => prev.filter(f => f.id !== fileId));
       }, 3000);
+      
+      // Notify parent component that upload is complete
+      onUploadComplete?.();
       
       return true;
     } catch (error) {
@@ -185,11 +207,15 @@ export function FrameUploadButton({
         // Then update with the new count
         await client.models.Videos.update({
           videoId,
-          hasChunks: true,
-          chunksCount: (currentVideo?.chunksCount || 0) + successCount,
+          
+          hasFrames: true,
+          framesCount: (currentVideo?.framesCount || 0) + successCount,
         });
         
         toast.success(`${successCount} frames uploaded successfully`);
+        
+        // Notify parent component that upload is complete
+        onUploadComplete?.();
       } catch (error) {
         console.error("Failed to update video record:", error);
       }

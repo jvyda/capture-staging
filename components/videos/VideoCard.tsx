@@ -1,7 +1,7 @@
 "use client";
 
 import { Card } from "@/components/ui/card";
-import { Heart, Star, Clock, MapPin, Users, Layers, AlertCircle, Loader2, Play, CheckCircle, Edit2, Check } from "lucide-react";
+import { Images, Heart, Star, Clock, MapPin, Users, Layers, AlertCircle, Loader2, Play, CheckCircle, Edit2, Check } from "lucide-react";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
@@ -25,6 +25,7 @@ export function VideoCard({
   taggedPeople,
   recognitionStatus,
   chunksCount,
+  framesCount,
   isSelected,
   onSelect,
 }: VideoCardProps) {
@@ -117,7 +118,7 @@ export function VideoCard({
       transition={{ duration: 0.2 }}
       onClick={handleCardClick}
     >
-      <Card className={`overflow-hidden group cursor-pointer hover:shadow-lg transition-shadow bg-background backdrop-blur-sm ${isSelected ? "ring-2 ring-theme-primary" : "border-theme-accent-alpha/20 border-0"}`}>
+      <Card className={`overflow-hidden group cursor-pointer hover:shadow-lg transition-shadow bg-background backdrop-blur-sm ${isSelected ? "ring-2 ring-red-500" : "border-theme-accent-alpha/20 border-0"}`}>
         <div className="relative aspect-square">
           <Image
             src={`https://${process.env.NEXT_PUBLIC_VIDEOS_CDN_DOMAIN}/${thumbnail}`||'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=800&q=80'}
@@ -131,7 +132,7 @@ export function VideoCard({
           
           {/* Selection Indicator */}
           {isSelected && (
-            <div className="absolute top-2 right-2 z-10 bg-theme-primary rounded-full p-1">
+            <div className="absolute top-4 right-4 w-6 h-6 rounded-full bg-red-500 flex items-center justify-center z-20">
               <Check className="w-4 h-4 text-white" />
             </div>
           )}
@@ -165,6 +166,11 @@ export function VideoCard({
                 <button className="px-2 py-1 rounded-full bg-black/70 backdrop-blur-sm text-white text-xs font-medium flex items-center gap-1.5 hover:bg-black/80 transition-colors">
                   <Layers className="w-3 h-3" />
                   <span>{chunksCount && chunksCount > 1 ? chunksCount : "Original"}</span>
+                </button>
+
+                <button className="px-2 py-1 rounded-full bg-black/70 backdrop-blur-sm text-white text-xs font-medium flex items-center gap-1.5 hover:bg-black/80 transition-colors">
+                  <Images className="w-3 h-3" />
+                  <span>{framesCount && framesCount > 1 ? framesCount : "0"}</span>
                 </button>
               
           </div>
