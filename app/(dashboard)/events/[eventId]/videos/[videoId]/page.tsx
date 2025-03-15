@@ -447,6 +447,22 @@ export default function VideoPage() {
     }
   };
 
+  // Helper function to calculate face count
+  const getFaceCount = (frame: FrameType): number => {
+    if (frame.taggedFacesCount !== null && frame.taggedFacesCount !== undefined) {
+      return frame.taggedFacesCount;
+    }
+    
+    if (frame.taggedFaces && typeof frame.taggedFaces === 'object') {
+      if (Array.isArray(frame.taggedFaces)) {
+        return frame.taggedFaces.length;
+      }
+      return Object.keys(frame.taggedFaces).length;
+    }
+    
+    return 0;
+  };
+
   return (
     <div className="max-w mx-auto">
       <div className="flex items-center justify-between mb-4">
@@ -569,6 +585,17 @@ export default function VideoPage() {
                                 className="object-cover transition-transform group-hover:scale-105"
                               />
                               
+                              {/* Status indicator and face count */}
+                              <div className="absolute top-2 right-2 flex items-center space-x-2 z-10">
+                                <div className={`h-3 w-3 rounded-full ${frame.recognitionStatus === 'COMPLETED' || frame.facesExtracted ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                                {getFaceCount(frame) > 0 && (
+                                  <div className="bg-black/70 text-white text-xs px-1.5 py-0.5 rounded-full flex items-center">
+                                    <span>{getFaceCount(frame)}</span>
+                                    <span className="ml-1">faces</span>
+                                  </div>
+                                )}
+                              </div>
+                              
                               {/* Hover overlay with actions */}
                               <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                                 <Button 
@@ -672,8 +699,25 @@ export default function VideoPage() {
         <DialogContent className="max-w-3xl">
           <DialogHeader>
             <DialogTitle>Frame Preview</DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="flex items-center gap-2">
               {selectedFrame?.frameName || "Frame"}
+              {selectedFrame && (
+                <>
+                  <div className="flex items-center ml-4 gap-2">
+                    <div className={`h-3 w-3 rounded-full ${selectedFrame.recognitionStatus === 'COMPLETED' || selectedFrame.facesExtracted ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                    <span className="text-xs">
+                      {selectedFrame.recognitionStatus === 'COMPLETED' || selectedFrame.facesExtracted ? 'Processed' : 'Not processed'}
+                    </span>
+                  </div>
+                  {getFaceCount(selectedFrame) > 0 && (
+                    <div className="flex items-center ml-4">
+                      <span className="text-xs font-medium">
+                        {getFaceCount(selectedFrame)} faces detected
+                      </span>
+                    </div>
+                  )}
+                </>
+              )}
             </DialogDescription>
           </DialogHeader>
           <div className="relative aspect-video w-full overflow-hidden rounded-lg">
